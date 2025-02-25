@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Chat, Message as MessageType } from './types/chat';
 import { ChatList } from './components/Sidebar/ChatList';
 import { Message } from './components/Chat/Message';
@@ -12,9 +12,10 @@ function App() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    setTheme(theme === 'light' ? 'dark' : 'dark');
   };
 
   const defaultChat: Chat = {
@@ -30,6 +31,16 @@ function App() {
   const [streamingMessage, setStreamingMessage] = useState<MessageType | null>(null);
   
   const currentChat = chats.find(chat => chat.id === activeChat);
+
+  // 自动滚动到最新消息
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // 当消息更新时自动滚动
+  useEffect(() => {
+    scrollToBottom();
+  }, [currentChat?.messages, streamingMessage]);
 
   // 创建新对话
   const handleNewChat = () => {
@@ -262,6 +273,8 @@ function App() {
               </div>
             </div>
           )}
+          {/* 用于自动滚动的空div元素 */}
+          <div ref={messagesEndRef} />
         </div>
         
         <div className="p-3 border-t border-base-300 bg-base-100">

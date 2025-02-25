@@ -8,17 +8,22 @@ interface ChatListProps {
 
 export function ChatList({ chats, activeChat, onChatSelect }: ChatListProps) {
   return (
-    <div className="chat-list">
+    <ul className="menu menu-md p-0 [&_li>*]:rounded-md">
       {chats.map((chat) => (
-        <div
-          key={chat.id}
-          className={`chat-item ${chat.id === activeChat ? 'active' : ''}`}
-          onClick={() => onChatSelect(chat.id)}
-        >
-          <h4>{chat.title}</h4>
-          <p className="last-message">{chat.firstMessage?.content}</p>
-        </div>
+        <li key={chat.id} className="mb-1">
+          <a 
+            className={chat.id === activeChat ? 'active font-medium' : 'font-medium'}
+            onClick={() => onChatSelect(chat.id)}
+          >
+            <div className="flex flex-col">
+              <span>{chat.title}</span>
+              {chat.firstMessage?.content && (
+                <span className="text-xs opacity-70 truncate">{chat.firstMessage.content}</span>
+              )}
+            </div>
+          </a>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 } 

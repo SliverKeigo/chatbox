@@ -23,24 +23,19 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="input-container">
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyPress={handleKeyPress}
-        placeholder="输入消息..."
-        rows={4}
-        disabled={disabled}
-      />
-      <div className="input-actions">
-        <button 
-          className="send-button" 
-          onClick={handleSend}
-          disabled={disabled || !message.trim()}
-        >
-          发送
-        </button>
-      </div>
+    <div className="flex items-center">
+      <label className="input input-bordered flex items-center gap-2 w-full">
+        <input
+          type="text"
+          className="grow"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="输入消息..."
+          disabled={disabled}
+        />
+        <kbd className="kbd kbd-sm">⏎</kbd>
+      </label>
     </div>
   );
 } 

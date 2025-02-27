@@ -210,11 +210,20 @@ function App() {
             chats={chats}
             activeChat={activeChat}
             onChatSelect={setActiveChat}
+            onChatDelete={(chatId) => {
+              if (chatId === activeChat) {
+                const otherChat = chats.find(chat => chat.id !== chatId);
+                if (otherChat) {
+                  setActiveChat(otherChat.id);
+                }
+              }
+              setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
+            }}
           />
         </div>
       </aside>
       
-      {/* 主内容区 */}
+
       <main className="flex-1 flex flex-col h-full">
         <header className="d-navbar shadow-sm">
           <div className="flex items-center">

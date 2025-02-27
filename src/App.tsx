@@ -192,28 +192,9 @@ function App() {
 
   return (
     <div className="flex h-screen" data-theme={theme}>
-      {/* 侧边栏 */}
+
       <aside className={`${isSidebarCollapsed ? 'w-0 overflow-hidden' : 'w-56 md:w-64'} transition-all duration-300 flex flex-col h-full d-card rounded-none`}>
-        <div className="p-3 d-card-title">
-          <h2 className="text-lg font-bold">聊天列表</h2>
-          <div className="flex gap-1">
-            <button 
-              className="d-btn d-btn-sm d-btn-ghost"
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              title={isSidebarCollapsed ? '展开' : '收起'}
-            >
-              {isSidebarCollapsed ? '→' : '←'}
-            </button>
-            <button 
-              className="d-btn d-btn-sm d-btn-circle"
-              onClick={handleNewChat}
-              title="新对话"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </button>
-          </div>
+        <div className="px-2 py-2 d-card-title flex justify-between items-center">
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           <ChatList
@@ -237,15 +218,28 @@ function App() {
       <main className="flex-1 flex flex-col h-full">
         <header className="d-navbar shadow-sm px-4">
           <div className="flex-1 flex items-center">
-            {isSidebarCollapsed && (
-              <button 
-                className="d-btn d-btn-sm d-btn-ghost mr-2"
-                onClick={() => setIsSidebarCollapsed(false)}
-                title="展开侧边栏"
-              >
-                ☰
-              </button>
-            )}
+            <button 
+              className="d-btn d-btn-sm d-btn-ghost d-btn-circle mr-2"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? '展开' : '收起'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                {isSidebarCollapsed ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                )}
+              </svg>
+            </button>
+            <button 
+            className="d-btn d-btn-sm d-btn-ghost d-btn-circle mr-2"
+            onClick={handleNewChat}
+            title="新对话"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
             {isEditingTitle ? (
               <input
                 ref={titleInputRef}

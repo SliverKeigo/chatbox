@@ -63,7 +63,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
         value={message}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder={`输入消息... (${navigator.platform.includes('Mac') ? 'fn+E' : 'win+.'} 打开表情, Shift+Enter 换行)`}
+        placeholder={`输入消息... `}
         disabled={disabled}
       />
       <div className="absolute right-4 top-6 -translate-y-1/2">

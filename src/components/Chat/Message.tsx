@@ -134,8 +134,8 @@ export function Message({ message }: MessageProps) {
   };
 
   return (
-    <div className={`chat ${message.type === 'user' ? 'chat-end' : 'chat-start'} mb-4`}>
-      <div className="chat-bubble">
+    <div className={`d-chat ${message.type === 'user' ? 'd-chat-end' : 'd-chat-start'} mb-4`}>
+      <div className={`d-chat-bubble ${message.type === 'user' ? 'd-chat-bubble-primary' : ''}`}>
         <div className="prose max-w-none">
           <ReactMarkdown 
             remarkPlugins={[remarkGfm]}
@@ -145,9 +145,9 @@ export function Message({ message }: MessageProps) {
             {message.content}
           </ReactMarkdown>
         </div>
-        <div className="text-xs opacity-50 mt-1 text-right">
-          {new Date(message.timestamp).toLocaleTimeString()}
-        </div>
+      </div>
+      <div className="d-chat-footer opacity-50 text-xs mt-1">
+        {new Date(message.timestamp).toLocaleTimeString()}
       </div>
     </div>
   );

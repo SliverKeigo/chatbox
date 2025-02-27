@@ -297,8 +297,11 @@ function App() {
             <Message key={streamingMessage.id} message={streamingMessage} />
           )}
           {isLoading && !streamingMessage && (
-            <div className="chat chat-start mb-4">
-              <div className="chat-bubble chat-bubble-neutral">
+            <div className="d-chat d-chat-start mb-4">
+              <div className="d-chat-header opacity-50 text-xs mb-1">
+                AI助手
+              </div>
+              <div className="d-chat-bubble">
                 <span className="d-loading d-loading-dots d-loading-sm"></span>
               </div>
             </div>

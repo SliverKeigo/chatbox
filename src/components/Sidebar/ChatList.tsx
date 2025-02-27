@@ -1,5 +1,5 @@
 import { Chat } from '../../types/chat';
-import { useState, MouseEvent } from 'react';
+import { useState, MouseEvent, useEffect } from 'react';
 
 interface ChatListProps {
   chats: Chat[];
@@ -21,44 +21,51 @@ export function ChatList({ chats, activeChat, onChatSelect, onChatDelete }: Chat
     chatId: ''
   });
 
+  // 添加全局点击事件监听
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (contextMenu.visible) {
+        setContextMenu(prev => ({ ...prev, visible: false }));
+      }
+    };
 
-  const handleContextMenu = (e: MouseEvent, chatId: string) => {
+    document.addEventListener('click', handleGlobalClick);
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [contextMenu.visible]);
+
+  const handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();
-    setContextMenu({
-      visible: true,
-      x: e.clientX,
-      y: e.clientY,
-      chatId
-    });
+    e.stopPropagation(); // 阻止事件冒泡
+    const chatId = (e.currentTarget as HTMLElement).dataset.chatId;
+    if (chatId) {
+      setContextMenu({
+        visible: true,
+        x: e.clientX,
+        y: e.clientY,
+        chatId
+      });
+    }
   };
 
-
-  const handleDelete = () => {
+  const handleDelete = (e: MouseEvent) => {
+    e.stopPropagation(); // 阻止事件冒泡
     if (onChatDelete && contextMenu.chatId) {
       onChatDelete(contextMenu.chatId);
-    }
-    setContextMenu({ ...contextMenu, visible: false });
-  };
-
-
-  const handleClick = () => {
-    if (contextMenu.visible) {
-      setContextMenu({ ...contextMenu, visible: false });
     }
   };
 
   return (
     <>
-      <ul 
-        className="d-menu d-menu-md p-0 [&_li>*]:rounded-md" 
-        onClick={handleClick}
-      >
+      <ul className="d-menu d-menu-md p-0 [&_li>*]:rounded-md">
         {chats.map((chat) => (
           <li key={chat.id} className="mb-1">
             <a 
               className={chat.id === activeChat ? 'active font-medium' : 'font-medium'}
               onClick={() => onChatSelect(chat.id)}
-              onContextMenu={(e) => handleContextMenu(e, chat.id)}
+              onContextMenu={handleContextMenu}
+              data-chat-id={chat.id}
             >
               <div className="flex flex-col">
                 <span>{chat.title}</span>
@@ -71,7 +78,6 @@ export function ChatList({ chats, activeChat, onChatSelect, onChatDelete }: Chat
         ))}
       </ul>
 
-
       {contextMenu.visible && (
         <div 
           className="d-menu d-menu-sm bg-base-200 rounded-box shadow-lg fixed z-50 p-2"
@@ -79,6 +85,7 @@ export function ChatList({ chats, activeChat, onChatSelect, onChatDelete }: Chat
             left: `${contextMenu.x}px`, 
             top: `${contextMenu.y}px` 
           }}
+          onClick={e => e.stopPropagation()} // 防止点击菜单本身时触发关闭
         >
           <li>
             <a 

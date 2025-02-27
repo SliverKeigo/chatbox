@@ -7,16 +7,13 @@ import { chatService } from './services/api';
 
 
 function App() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<string>('light');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
   const titleInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'dark');
-  };
 
   const defaultChat: Chat = {
     id: 'default',
@@ -191,14 +188,14 @@ function App() {
           <h2 className="text-lg font-bold">聊天列表</h2>
           <div className="flex gap-1">
             <button 
-              className="btn btn-sm btn-ghost"
+              className="d-btn d-btn-sm d-btn-ghost"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               title={isSidebarCollapsed ? '展开' : '收起'}
             >
               {isSidebarCollapsed ? '→' : '←'}
             </button>
             <button 
-              className="btn btn-sm btn-circle"
+              className="d-btn d-btn-sm d-btn-circle"
               onClick={handleNewChat}
               title="新对话"
             >
@@ -223,7 +220,7 @@ function App() {
           <div className="flex items-center">
             {isSidebarCollapsed && (
               <button 
-                className="btn btn-sm btn-ghost mr-2"
+                className="d-btn d-btn-sm d-btn-ghost mr-2"
                 onClick={() => setIsSidebarCollapsed(false)}
                 title="展开侧边栏"
               >
@@ -234,7 +231,7 @@ function App() {
               <input
                 ref={titleInputRef}
                 type="text"
-                className="input input-sm input-bordered max-w-xs"
+                className="d-input d-input-sm d-input-bordered max-w-xs"
                 value={editingTitle}
                 onChange={(e) => setEditingTitle(e.target.value)}
                 onBlur={saveTitle}
@@ -250,13 +247,46 @@ function App() {
               </h3>
             )}
           </div>
-          <button 
-            className="btn btn-sm btn-ghost"
-            onClick={toggleTheme}
-            title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
+          <div className="flex items-center gap-2">
+            <select 
+              className="d-select d-select-sm d-select-bordered w-full max-w-xs"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+            >
+              <option value="light">🌝 Light</option>
+              <option value="dark">🌚 Dark</option>
+              <option value="cupcake">🧁 Cupcake</option>
+              <option value="bumblebee">🐝 Bumblebee</option>
+              <option value="emerald">💎 Emerald</option>
+              <option value="corporate">🏢 Corporate</option>
+              <option value="synthwave">🌃 Synthwave</option>
+              <option value="retro">📺 Retro</option>
+              <option value="cyberpunk">🤖 Cyberpunk</option>
+              <option value="valentine">💝 Valentine</option>
+              <option value="halloween">🎃 Halloween</option>
+              <option value="garden">🌷 Garden</option>
+              <option value="forest">🌲 Forest</option>
+              <option value="aqua">💧 Aqua</option>
+              <option value="lofi">🎵 Lo-Fi</option>
+              <option value="pastel">🎨 Pastel</option>
+              <option value="fantasy">🧚‍♀️ Fantasy</option>
+              <option value="wireframe">📝 Wireframe</option>
+              <option value="black">⚫ Black</option>
+              <option value="luxury">💰 Luxury</option>
+              <option value="dracula">🧛‍♂️ Dracula</option>
+              <option value="cmyk">🖨️ CMYK</option>
+              <option value="autumn">🍂 Autumn</option>
+              <option value="business">💼 Business</option>
+              <option value="acid">🧪 Acid</option>
+              <option value="lemonade">🍋 Lemonade</option>
+              <option value="night">🌙 Night</option>
+              <option value="coffee">☕ Coffee</option>
+              <option value="winter">❄️ Winter</option>
+              <option value="dim">💡 Dim</option>
+              <option value="nord">❄️ Nord</option>
+              <option value="sunset">🌅 Sunset</option>
+            </select>
+          </div>
         </header>
         
         <div className="flex-1 overflow-y-auto p-4 bg-base-100">
@@ -269,7 +299,7 @@ function App() {
           {isLoading && !streamingMessage && (
             <div className="chat chat-start mb-4">
               <div className="chat-bubble chat-bubble-neutral">
-                <span className="loading loading-dots loading-sm"></span>
+                <span className="d-loading d-loading-dots d-loading-sm"></span>
               </div>
             </div>
           )}

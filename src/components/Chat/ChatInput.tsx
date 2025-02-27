@@ -24,7 +24,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
 
   return (
     <div className="flex items-center">
-      <label className="input input-bordered flex items-center gap-2 w-full">
+      <label className="d-input d-input-bordered flex items-center gap-2 w-full">
         <input
           type="text"
           className="grow"
@@ -34,7 +34,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
           placeholder="输入消息..."
           disabled={disabled}
         />
-        <kbd className="kbd kbd-sm">⏎</kbd>
+        <kbd className="d-kbd d-kbd-sm">⏎</kbd>
       </label>
     </div>
   );

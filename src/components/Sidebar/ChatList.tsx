@@ -8,7 +8,7 @@ interface ChatListProps {
 
 export function ChatList({ chats, activeChat, onChatSelect }: ChatListProps) {
   return (
-    <ul className="menu menu-md p-0 [&_li>*]:rounded-md">
+    <ul className="d-menu d-menu-md p-0 [&_li>*]:rounded-md">
       {chats.map((chat) => (
         <li key={chat.id} className="mb-1">
           <a 

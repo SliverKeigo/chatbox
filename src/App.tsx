@@ -225,8 +225,8 @@ function App() {
       
 
       <main className="flex-1 flex flex-col h-full">
-        <header className="d-navbar shadow-sm">
-          <div className="flex items-center">
+        <header className="d-navbar shadow-sm px-4">
+          <div className="flex-1 flex items-center">
             {isSidebarCollapsed && (
               <button 
                 className="d-btn d-btn-sm d-btn-ghost mr-2"
@@ -256,7 +256,7 @@ function App() {
               </h3>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <select 
               className="d-select d-select-sm d-select-bordered w-full max-w-xs"
               value={theme}
@@ -295,6 +295,11 @@ function App() {
               <option value="nord">❄️ Nord</option>
               <option value="sunset">🌅 Sunset</option>
             </select>
+            <div className="d-avatar">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center">
+                <img src="https://api.lolimi.cn/API/dmtx/api.php" alt="用户头像" />
+              </div>
+            </div>
           </div>
         </header>
         

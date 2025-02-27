@@ -3,9 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import copy from 'copy-to-clipboard';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Components } from 'react-markdown';
 
 interface MessageProps {
@@ -14,63 +14,11 @@ interface MessageProps {
 
 export function Message({ message }: MessageProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-
-  // 检测当前主题
-  useEffect(() => {
-    const detectTheme = () => {
-      const htmlElement = document.documentElement;
-      const currentTheme = htmlElement.getAttribute('data-theme');
-      setTheme(currentTheme === 'dark' ? 'dark' : 'light');
-    };
-
-    detectTheme();
-    
-    // 创建一个观察器来监听data-theme属性的变化
-    const observer = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        if (
-          mutation.type === 'attributes' &&
-          mutation.attributeName === 'data-theme'
-        ) {
-          detectTheme();
-        }
-      });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme']
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   const handleCopy = (code: string) => {
     copy(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
-  };
-
-  // 自定义代码高亮样式，覆盖默认的白色背景
-  const getCustomStyle = () => {
-    // 基于当前主题的样式
-    const baseStyle = theme === 'dark' ? oneDark : oneLight;
-    
-    // 创建一个新的样式对象，覆盖背景色
-    return {
-      ...baseStyle,
-      'pre[class*="language-"]': {
-        ...baseStyle['pre[class*="language-"]'],
-        background: 'transparent',
-        margin: 0,
-        padding: 0
-      },
-      'code[class*="language-"]': {
-        ...baseStyle['code[class*="language-"]'],
-        background: 'transparent',
-      }
-    };
   };
 
   const components: Components = {
@@ -82,16 +30,16 @@ export function Message({ message }: MessageProps) {
         node.position.start.line === node.position.end.line;
       
       if (isInline) {
-        return <code className="bg-opacity-50 bg-base-300 px-1 rounded text-sm" {...props}>{children}</code>;
+        return <code className="d-badge d-badge-ghost text-sm" {...props}>{children}</code>;
       }
 
       if (match) {
         return (
-          <div className="not-prose rounded overflow-hidden my-2 border border-base-300 border-opacity-30">
-            <div className="flex justify-between items-center px-3 py-1 bg-base-300 bg-opacity-30 text-xs">
-              <span className="opacity-70">{match[1]}</span>
+          <div className="not-prose rounded-box d-card my-2">
+            <div className="flex justify-between items-center px-3 py-1 d-card-title text-xs">
+              <span>{match[1]}</span>
               <button 
-                className="p-1 hover:bg-base-300 rounded transition-colors"
+                className="d-btn d-btn-ghost d-btn-xs"
                 onClick={() => handleCopy(code)}
                 title={copiedCode === code ? '已复制!' : '复制代码'}
               >
@@ -106,20 +54,15 @@ export function Message({ message }: MessageProps) {
                 )}
               </button>
             </div>
-            <div className="overflow-x-auto text-sm bg-base-300 bg-opacity-20">
+            <div className="d-card-body p-0">
               <SyntaxHighlighter
-                style={getCustomStyle()}
+                style={oneDark}
                 language={match[1]}
+                PreTag="div"
+                className="d-card-body"
                 customStyle={{
                   margin: 0,
                   padding: '0.75rem',
-                  background: 'transparent',
-                  borderRadius: 0
-                }}
-                codeTagProps={{
-                  style: {
-                    fontSize: 'inherit'
-                  }
                 }}
               >
                 {code}
@@ -129,7 +72,7 @@ export function Message({ message }: MessageProps) {
         );
       }
 
-      return <code className="bg-opacity-50 bg-base-300 px-1 rounded text-sm" {...props}>{children}</code>;
+      return <code className="d-badge d-badge-ghost text-sm" {...props}>{children}</code>;
     }
   };
 
@@ -146,7 +89,7 @@ export function Message({ message }: MessageProps) {
           </ReactMarkdown>
         </div>
       </div>
-      <div className="d-chat-footer opacity-50 text-xs mt-1">
+      <div className="d-chat-footer text-xs mt-1">
         {new Date(message.timestamp).toLocaleTimeString()}
       </div>
     </div>

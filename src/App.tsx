@@ -183,8 +183,8 @@ function App() {
   return (
     <div className="flex h-screen" data-theme={theme}>
       {/* 侧边栏 */}
-      <aside className={`${isSidebarCollapsed ? 'w-0 overflow-hidden' : 'w-56 md:w-64'} transition-all duration-300 flex flex-col h-full border-r border-base-300`}>
-        <div className="p-3 border-b border-base-300 flex justify-between items-center bg-base-200">
+      <aside className={`${isSidebarCollapsed ? 'w-0 overflow-hidden' : 'w-56 md:w-64'} transition-all duration-300 flex flex-col h-full d-card rounded-none`}>
+        <div className="p-3 d-card-title">
           <h2 className="text-lg font-bold">聊天列表</h2>
           <div className="flex gap-1">
             <button 
@@ -216,7 +216,7 @@ function App() {
       
       {/* 主内容区 */}
       <main className="flex-1 flex flex-col h-full">
-        <header className="bg-base-200 p-3 flex justify-between items-center shadow-sm">
+        <header className="d-navbar shadow-sm">
           <div className="flex items-center">
             {isSidebarCollapsed && (
               <button 
@@ -289,7 +289,7 @@ function App() {
           </div>
         </header>
         
-        <div className="flex-1 overflow-y-auto p-4 bg-base-100">
+        <div className="flex-1 overflow-y-auto p-4">
           {currentChat?.messages.map(message => (
             <Message key={message.id} message={message} />
           ))}
@@ -298,7 +298,7 @@ function App() {
           )}
           {isLoading && !streamingMessage && (
             <div className="d-chat d-chat-start mb-4">
-              <div className="d-chat-header opacity-50 text-xs mb-1">
+              <div className="d-chat-header text-xs mb-1">
                 AI助手
               </div>
               <div className="d-chat-bubble">
@@ -306,11 +306,10 @@ function App() {
               </div>
             </div>
           )}
-          {/* 用于自动滚动的空div元素 */}
           <div ref={messagesEndRef} />
         </div>
         
-        <div className="p-3 border-t border-base-300 bg-base-100">
+        <div className="p-3 d-navbar">
           <ChatInput
             onSendMessage={handleSendMessage}
             disabled={isLoading}

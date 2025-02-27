@@ -53,6 +53,7 @@ export function ChatList({ chats, activeChat, onChatSelect, onChatDelete }: Chat
     e.stopPropagation(); // 阻止事件冒泡
     if (onChatDelete && contextMenu.chatId) {
       onChatDelete(contextMenu.chatId);
+      setContextMenu(prev => ({ ...prev, visible: false }));
     }
   };
 

@@ -41,9 +41,19 @@ function App() {
 
   // 创建新对话
   const handleNewChat = () => {
+    // 找出当前最大的对话编号
+    const maxNumber = chats.reduce((max, chat) => {
+      const match = chat.title.match(/新对话\s*(\d+)/);
+      if (match) {
+        const num = parseInt(match[1]);
+        return num > max ? num : max;
+      }
+      return max;
+    }, 0);
+
     const newChat: Chat = {
       id: Date.now().toString(),
-      title: `新对话 ${chats.length + 1}`,
+      title: `新对话 ${maxNumber + 1}`,
       messages: [],
       createdAt: new Date().toISOString()
     };

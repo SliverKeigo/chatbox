@@ -311,10 +311,10 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen" data-theme={theme || 'wireframe'}>
+    <div className="flex h-screen overflow-hidden" data-theme={theme || 'wireframe'}>
 
       {errorMessage && (
-        <div className="d-toast d-toast-top d-toast-center">
+        <div className="d-toast d-toast-top d-toast-center z-50">
           <div className="d-alert d-alert-error">
             <span>{errorMessage}</span>
           </div>
@@ -366,11 +366,11 @@ function App() {
       </aside>
       
 
-      <main className="flex-1 flex flex-col h-full">
-        <header className="d-navbar shadow-sm px-4">
-          <div className="flex-1 flex items-center">
+      <main className="flex-1 flex flex-col h-full min-w-0">
+        <header className="d-navbar shadow-sm px-2 md:px-4">
+          <div className="flex-1 flex items-center overflow-hidden">
             <button 
-              className="d-btn d-btn-sm d-btn-ghost d-btn-circle mr-2"
+              className="d-btn d-btn-sm d-btn-ghost d-btn-circle mr-1 md:mr-2 flex-shrink-0"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               title={isSidebarCollapsed ? '展开' : '收起'}
             >
@@ -383,19 +383,19 @@ function App() {
               </svg>
             </button>
             <button 
-            className="d-btn d-btn-sm d-btn-ghost d-btn-circle mr-2"
-            onClick={handleNewChat}
-            title="新对话"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
+              className="d-btn d-btn-sm d-btn-ghost d-btn-circle mr-1 md:mr-2 flex-shrink-0"
+              onClick={handleNewChat}
+              title="新对话"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
             {isEditingTitle ? (
               <input
                 ref={titleInputRef}
                 type="text"
-                className="d-input d-input-sm d-input-bordered max-w-xs"
+                className="d-input d-input-sm d-input-bordered max-w-xs flex-shrink"
                 value={editingTitle}
                 onChange={(e) => setEditingTitle(e.target.value)}
                 onBlur={saveTitle}
@@ -403,7 +403,7 @@ function App() {
               />
             ) : (
               <h3 
-                className="text-lg font-medium cursor-pointer hover:underline" 
+                className="text-lg font-medium cursor-pointer hover:underline truncate"
                 onClick={startEditingTitle}
                 title="点击修改对话名称"
               >
@@ -411,9 +411,9 @@ function App() {
               </h3>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <select 
-              className="d-select d-select-sm d-select-bordered w-full max-w-xs"
+              className="d-select d-select-sm d-select-bordered w-full max-w-[120px] md:max-w-xs hidden sm:block"
               value={theme || 'wireframe'}
               onChange={(e) => setTheme(e.target.value)}
             >
@@ -450,15 +450,34 @@ function App() {
               <option value="nord">❄️ Nord</option>
               <option value="sunset">🌅 Sunset</option>
             </select>
-            <div className="d-avatar">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center">
+            <div className="d-dropdown d-dropdown-end sm:hidden">
+              <div tabIndex={0} role="button" className="d-btn d-btn-ghost d-btn-circle d-btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+                </svg>
+              </div>
+              <ul tabIndex={0} className="d-dropdown-content z-[1] d-menu p-2 shadow bg-base-100 rounded-box w-52">
+                {["light", "dark", "wireframe", "cupcake", "bumblebee", "emerald", "corporate"].map(t => (
+                  <li key={t}>
+                    <a 
+                      className={theme === t ? "active" : ""} 
+                      onClick={() => setTheme(t)}
+                    >
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="d-avatar flex-shrink-0">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center">
                 <img src={avatar} alt="用户头像" />
               </div>
             </div>
           </div>
         </header>
         
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-2 md:p-4">
           {currentChat?.messages.map(message => (
             <Message key={message.id} message={message} />
           ))}
@@ -478,7 +497,7 @@ function App() {
           <div ref={messagesEndRef} />
         </div>
         
-        <div className="p-3 d-navbar">
+        <div className="p-2 md:p-3 d-navbar">
           <ChatInput
             onSendMessage={handleSendMessage}
             disabled={isLoading}

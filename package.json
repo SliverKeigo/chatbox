@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:prod": "tsc --noEmit false --noUnusedLocals false --noUnusedParameters false && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:build": "tauri build --config tauri.conf.json"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.1.14",

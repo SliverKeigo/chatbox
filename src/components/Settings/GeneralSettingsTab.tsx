@@ -67,11 +67,24 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange }: G
         onThemeChange(theme);
       }
       
+      // 关闭设置对话框
+      onClose();
       
     } catch (error) {
       console.error('保存设置失败:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // 处理主题变更
+  const handleThemeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newTheme = e.target.value;
+    setTheme(newTheme);
+    
+    // 立即应用主题变更
+    if (onThemeChange) {
+      onThemeChange(newTheme);
     }
   };
 
@@ -179,25 +192,324 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange }: G
         <label className="d-label">
           <span className="d-label-text">主题</span>
         </label>
-        <select 
-          className="d-select d-select-bordered w-full" 
-          value={theme}
-          onChange={(e) => setTheme(e.target.value)}
-        >
-          <option value="light">🌝 亮色</option>
-          <option value="dark">🌚 暗色</option>
-          <option value="cupcake">🧁 杯子蛋糕</option>
-          <option value="bumblebee">🐝 大黄蜂</option>
-          <option value="emerald">💎 祖母绿</option>
-          <option value="corporate">🏢 企业</option>
-          <option value="synthwave">🌃 合成波</option>
-          <option value="retro">📺 复古</option>
-          <option value="cyberpunk">🤖 赛博朋克</option>
-          <option value="wireframe">📝 线框</option>
-          <option value="night">🌙 夜晚</option>
-          <option value="coffee">☕ 咖啡</option>
-          <option value="winter">❄️ 冬季</option>
-        </select>
+        
+        <div className="flex flex-wrap gap-2 justify-center">
+          {/* 第一行 - 基础主题 */}
+          <div className="d-join">
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Light"
+              value="light"
+              checked={theme === 'light'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Dark"
+              value="dark"
+              checked={theme === 'dark'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Cupcake"
+              value="cupcake"
+              checked={theme === 'cupcake'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Bumblebee"
+              value="bumblebee"
+              checked={theme === 'bumblebee'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Emerald"
+              value="emerald"
+              checked={theme === 'emerald'}
+              onChange={handleThemeChange}
+            />
+          </div>
+          
+          {/* 第二行 */}
+          <div className="d-join">
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Corporate"
+              value="corporate"
+              checked={theme === 'corporate'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Synthwave"
+              value="synthwave"
+              checked={theme === 'synthwave'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Retro"
+              value="retro"
+              checked={theme === 'retro'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Cyberpunk"
+              value="cyberpunk"
+              checked={theme === 'cyberpunk'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Valentine"
+              value="valentine"
+              checked={theme === 'valentine'}
+              onChange={handleThemeChange}
+            />
+          </div>
+          
+          {/* 第三行 */}
+          <div className="d-join">
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Halloween"
+              value="halloween"
+              checked={theme === 'halloween'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Garden"
+              value="garden"
+              checked={theme === 'garden'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Forest"
+              value="forest"
+              checked={theme === 'forest'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Aqua"
+              value="aqua"
+              checked={theme === 'aqua'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Lofi"
+              value="lofi"
+              checked={theme === 'lofi'}
+              onChange={handleThemeChange}
+            />
+          </div>
+          
+          {/* 第四行 */}
+          <div className="d-join">
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Pastel"
+              value="pastel"
+              checked={theme === 'pastel'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Fantasy"
+              value="fantasy"
+              checked={theme === 'fantasy'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Wireframe"
+              value="wireframe"
+              checked={theme === 'wireframe'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Black"
+              value="black"
+              checked={theme === 'black'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Luxury"
+              value="luxury"
+              checked={theme === 'luxury'}
+              onChange={handleThemeChange}
+            />
+          </div>
+          
+          {/* 第五行 */}
+          <div className="d-join">
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Dracula"
+              value="dracula"
+              checked={theme === 'dracula'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="CMYK"
+              value="cmyk"
+              checked={theme === 'cmyk'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Autumn"
+              value="autumn"
+              checked={theme === 'autumn'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Business"
+              value="business"
+              checked={theme === 'business'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Acid"
+              value="acid"
+              checked={theme === 'acid'}
+              onChange={handleThemeChange}
+            />
+          </div>
+          
+          {/* 第六行 */}
+          <div className="d-join">
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Lemonade"
+              value="lemonade"
+              checked={theme === 'lemonade'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Night"
+              value="night"
+              checked={theme === 'night'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Coffee"
+              value="coffee"
+              checked={theme === 'coffee'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Winter"
+              value="winter"
+              checked={theme === 'winter'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Dim"
+              value="dim"
+              checked={theme === 'dim'}
+              onChange={handleThemeChange}
+            />
+          </div>
+          
+          {/* 第七行 */}
+          <div className="d-join">
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Nord"
+              value="nord"
+              checked={theme === 'nord'}
+              onChange={handleThemeChange}
+            />
+            <input
+              type="radio"
+              name="theme-buttons"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="Sunset"
+              value="sunset"
+              checked={theme === 'sunset'}
+              onChange={handleThemeChange}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="d-modal-action">
@@ -213,6 +525,7 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange }: G
           onClick={handleSave}
           disabled={isSaving}
         >
+          {isSaving ? <span className="d-loading d-loading-spinner d-loading-xs mr-2"></span> : null}
           保存
         </button>
       </div>

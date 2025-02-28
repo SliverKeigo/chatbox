@@ -321,14 +321,25 @@ function App() {
         </div>
       )}
 
-      <aside className={`${isSidebarCollapsed ? 'w-0 overflow-hidden' : 'w-56 md:w-64'} transition-all duration-300 flex flex-col h-full d-card rounded-none`}>
+      <aside className={`${isSidebarCollapsed ? 'w-0 overflow-hidden' : 'flex-shrink-0'} transition-all duration-300 flex flex-col h-full d-card rounded-none relative`}>
         <div className="px-2 py-2 d-card-title flex justify-between items-center">
+          <h2 className="text-lg font-bold">聊天列表</h2>
+          <button 
+            className="d-btn d-btn-sm d-btn-ghost d-btn-circle"
+            onClick={handleNewChat}
+            title="新对话"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2">
-          <ChatList
-            chats={chats}
-            activeChat={activeChat || undefined}
-            onChatSelect={setActiveChat}
+        
+        <div className="flex-1 overflow-hidden">
+          <ChatList 
+            chats={chats} 
+            activeChat={activeChat || undefined} 
+            onChatSelect={setActiveChat} 
             onChatDelete={async (chatId) => {
               try {
                 await chatStorage.deleteChat(chatId);
@@ -349,7 +360,7 @@ function App() {
           />
         </div>
         
-        <div className="p-5 border-t">
+        <div className="p-2 border-t">
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
             fill="none" 
@@ -382,15 +393,6 @@ function App() {
                 )}
               </svg>
             </button>
-            <button 
-              className="d-btn d-btn-sm d-btn-ghost d-btn-circle mr-1 md:mr-2 flex-shrink-0"
-              onClick={handleNewChat}
-              title="新对话"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
             {isEditingTitle ? (
               <input
                 ref={titleInputRef}
@@ -412,63 +414,6 @@ function App() {
             )}
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <select 
-              className="d-select d-select-sm d-select-bordered w-full max-w-[120px] md:max-w-xs hidden sm:block"
-              value={theme || 'wireframe'}
-              onChange={(e) => setTheme(e.target.value)}
-            >
-              <option value="light">🌝 Light</option>
-              <option value="dark">🌚 Dark</option>
-              <option value="cupcake">🧁 Cupcake</option>
-              <option value="bumblebee">🐝 Bumblebee</option>
-              <option value="emerald">💎 Emerald</option>
-              <option value="corporate">🏢 Corporate</option>
-              <option value="synthwave">🌃 Synthwave</option>
-              <option value="retro">📺 Retro</option>
-              <option value="cyberpunk">🤖 Cyberpunk</option>
-              <option value="valentine">💝 Valentine</option>
-              <option value="halloween">🎃 Halloween</option>
-              <option value="garden">🌷 Garden</option>
-              <option value="forest">🌲 Forest</option>
-              <option value="aqua">💧 Aqua</option>
-              <option value="lofi">🎵 Lo-Fi</option>
-              <option value="pastel">🎨 Pastel</option>
-              <option value="fantasy">🧚‍♀️ Fantasy</option>
-              <option value="wireframe">📝 Wireframe</option>
-              <option value="black">⚫ Black</option>
-              <option value="luxury">💰 Luxury</option>
-              <option value="dracula">🧛‍♂️ Dracula</option>
-              <option value="cmyk">🖨️ CMYK</option>
-              <option value="autumn">🍂 Autumn</option>
-              <option value="business">💼 Business</option>
-              <option value="acid">🧪 Acid</option>
-              <option value="lemonade">🍋 Lemonade</option>
-              <option value="night">🌙 Night</option>
-              <option value="coffee">☕ Coffee</option>
-              <option value="winter">❄️ Winter</option>
-              <option value="dim">💡 Dim</option>
-              <option value="nord">❄️ Nord</option>
-              <option value="sunset">🌅 Sunset</option>
-            </select>
-            <div className="d-dropdown d-dropdown-end sm:hidden">
-              <div tabIndex={0} role="button" className="d-btn d-btn-ghost d-btn-circle d-btn-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
-                </svg>
-              </div>
-              <ul tabIndex={0} className="d-dropdown-content z-[1] d-menu p-2 shadow bg-base-100 rounded-box w-52">
-                {["light", "dark", "wireframe", "cupcake", "bumblebee", "emerald", "corporate"].map(t => (
-                  <li key={t}>
-                    <a 
-                      className={theme === t ? "active" : ""} 
-                      onClick={() => setTheme(t)}
-                    >
-                      {t.charAt(0).toUpperCase() + t.slice(1)}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
             <div className="d-avatar flex-shrink-0">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center">
                 <img src={avatar} alt="用户头像" />

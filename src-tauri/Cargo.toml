@@ -1,8 +1,8 @@
 [package]
 name = "chatbox"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "A chatbox app"
+authors = ["Keigo"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

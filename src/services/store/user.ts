@@ -9,7 +9,7 @@ export class UserStorageService extends BaseStorageService {
   // 保存头像
   async saveAvatar(avatar: string) {
     try {
-      console.log('Saving avatar:', avatar);
+      console.log('Saving avatar:', avatar.substring(0, 30) + '...');
       const store = await this.ensureStore();
       
       // 先获取当前头像，避免重复保存相同的值
@@ -19,9 +19,14 @@ export class UserStorageService extends BaseStorageService {
         return;
       }
       
+      // 检查是否为Base64格式的图片数据
+      if (avatar.startsWith('data:image')) {
+        console.log('Saving Base64 image data');
+      }
+      
       await store.set('avatar', avatar);
       await store.save();
-      console.log('Avatar saved successfully:', avatar);
+      console.log('Avatar saved successfully');
     } catch (error) {
       console.error('Failed to save avatar:', error);
       throw new Error('保存头像失败');
@@ -34,16 +39,14 @@ export class UserStorageService extends BaseStorageService {
       console.log('Loading avatar...');
       const store = await this.ensureStore();
       const avatar = await store.get<string>('avatar');
-      console.log('Raw loaded avatar:', avatar);
       
-      if (!avatar || avatar.includes('multiavatar.com')) {
-        // 如果没有存储的头像或使用旧的API，使用默认头像并保存
-        console.log('No avatar found or using old API, using default avatar');
-        await this.saveAvatar(defaultState.avatar);
+      if (!avatar) {
+        // 如果没有存储的头像，使用默认头像
+        console.log('No avatar found, using default avatar');
         return defaultState.avatar;
       }
       
-      console.log('Using stored avatar:', avatar);
+      console.log('Using stored avatar');
       return avatar;
     } catch (error) {
       console.error('Failed to load avatar:', error);

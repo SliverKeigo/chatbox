@@ -5,9 +5,11 @@ import { useState } from 'react';
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onThemeChange?: (theme: string) => void;
+  onAvatarChange?: (avatar: string) => void;
 }
 
-export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
+export function SettingsDialog({ isOpen, onClose, onThemeChange, onAvatarChange }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'model'>('general');
   
   if (!isOpen) return null;
@@ -49,7 +51,11 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
           
           <div className="mt-6 flex-1 overflow-y-auto">
             {activeTab === 'general' ? (
-              <GeneralSettingsTab onClose={onClose} />
+              <GeneralSettingsTab 
+                onClose={onClose} 
+                onThemeChange={onThemeChange}
+                onAvatarChange={onAvatarChange}
+              />
             ) : (
               <ModelSettingsTab onClose={onClose} />
             )}

@@ -180,8 +180,13 @@ function App() {
     
     if (!activeChat || !content.trim()) return;
     
+    // 生成唯一的消息ID
+    const generateMessageId = () => {
+      return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    };
+    
     const userMessage: MessageType = {
-      id: Date.now().toString(),
+      id: generateMessageId(),
       content,
       timestamp: new Date().toISOString(),
       type: 'user'
@@ -205,7 +210,7 @@ function App() {
 
     try {
       // 创建一个初始的空助手消息用于流式更新
-      const assistantMessageId = Date.now().toString();
+      const assistantMessageId = generateMessageId();
       const initialAssistantMessage: MessageType = {
         id: assistantMessageId,
         content: '',

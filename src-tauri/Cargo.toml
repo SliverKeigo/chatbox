@@ -1,7 +1,7 @@
 [package]
 name = "chatbox"
 version = "0.1.0"
-description = "A chatbox app"
+description = "一个现代化的AI聊天应用，支持多主题、用户个性化和流式响应"
 authors = ["Keigo"]
 edition = "2021"
 

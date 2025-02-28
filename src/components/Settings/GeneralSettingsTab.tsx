@@ -5,9 +5,10 @@ interface GeneralSettingsTabProps {
   onClose: () => void;
   onThemeChange?: (theme: string) => void;
   onAvatarChange?: (avatar: string) => void;
+  onUsernameChange?: (username: string) => void;
 }
 
-export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange }: GeneralSettingsTabProps) {
+export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange, onUsernameChange }: GeneralSettingsTabProps) {
   const [username, setUsername] = useState<string>('');
   const [avatar, setAvatar] = useState<string>('');
   const [theme, setTheme] = useState<string>('wireframe');
@@ -52,6 +53,10 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange }: G
       
       // 保存用户名
       await userStorage.saveName(username);
+      // 调用用户名更新回调
+      if (onUsernameChange) {
+        onUsernameChange(username);
+      }
       
       // 保存头像
       await userStorage.saveAvatar(avatar);
@@ -135,13 +140,39 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange }: G
         <label className="d-label">
           <span className="d-label-text">用户名</span>
         </label>
-        <input 
-          type="text" 
-          className="d-input d-input-bordered w-full" 
-          placeholder="请输入用户名"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+        
+        <div className="flex flex-col md:flex-row gap-6 items-center">
+          <div className="relative w-full">
+            <div className="d-input-group">
+              <span className="d-input-group-addon bg-primary text-primary-content">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </span>
+              <input 
+                type="text" 
+                className="d-input d-input-bordered w-full" 
+                placeholder="请输入用户名"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              {username && (
+                <button 
+                  className="d-input-group-addon bg-base-300 hover:bg-base-200 cursor-pointer"
+                  onClick={() => setUsername('')}
+                  title="清除用户名"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <div className="mt-2 text-xs opacity-70 px-2">
+              设置您的用户名，它将显示在应用的头部区域
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="form-control">

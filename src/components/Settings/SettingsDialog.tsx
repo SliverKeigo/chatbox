@@ -7,9 +7,10 @@ interface SettingsDialogProps {
   onClose: () => void;
   onThemeChange?: (theme: string) => void;
   onAvatarChange?: (avatar: string) => void;
+  onUsernameChange?: (username: string) => void;
 }
 
-export function SettingsDialog({ isOpen, onClose, onThemeChange, onAvatarChange }: SettingsDialogProps) {
+export function SettingsDialog({ isOpen, onClose, onThemeChange, onAvatarChange, onUsernameChange }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'model'>('general');
   
   if (!isOpen) return null;
@@ -55,6 +56,7 @@ export function SettingsDialog({ isOpen, onClose, onThemeChange, onAvatarChange 
                 onClose={onClose} 
                 onThemeChange={onThemeChange}
                 onAvatarChange={onAvatarChange}
+                onUsernameChange={onUsernameChange}
               />
             ) : (
               <ModelSettingsTab onClose={onClose} />

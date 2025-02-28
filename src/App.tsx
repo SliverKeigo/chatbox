@@ -4,10 +4,11 @@ import { ChatList } from './components/Sidebar/ChatList';
 import { Message } from './components/Chat/Message';
 import { ChatInput } from './components/Chat/ChatInput';
 import { chatService } from './services/api';
+import { storageService } from './services/store';
 
 
 function App() {
-  const [theme, setTheme] = useState<string>('light');
+  const [theme, setTheme] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
@@ -15,20 +16,94 @@ function App() {
   const titleInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-
-  const defaultChat: Chat = {
-    id: 'default',
-    title: '默认对话',
-    messages: [],
-    createdAt: new Date().toISOString()
-  };
-
-  const [chats, setChats] = useState<Chat[]>([defaultChat]);
-  const [activeChat, setActiveChat] = useState<string>(defaultChat.id);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<MessageType | null>(null);
   
-  const currentChat = chats.find(chat => chat.id === activeChat);
+  const currentChat = chats.find(chat => chat.id === activeChat) || null;
+
+  // 加载保存的数据
+  useEffect(() => {
+    const loadSavedData = async () => {
+      try {
+        console.log('开始加载保存的数据...');
+        
+        // 加载聊天列表
+        const savedChats = await storageService.loadChats();
+        console.log('加载到的聊天列表:', savedChats);
+        
+        // 加载上次活动的聊天
+        const savedActiveChat = await storageService.loadActiveChat();
+        console.log('加载到的活动聊天:', savedActiveChat);
+
+        // 如果有保存的聊天列表，直接使用
+        if (savedChats && savedChats.length > 0) {
+          setChats(savedChats);
+          // 如果有保存的活动聊天并且该聊天存在于列表中，则设置它
+          if (savedActiveChat && savedChats.some(chat => chat.id === savedActiveChat)) {
+            setActiveChat(savedActiveChat);
+          } else {
+            // 如果没有有效的活动聊天，设置第一个聊天为活动聊天
+            setActiveChat(savedChats[0].id);
+          }
+        } else {
+          // 如果没有保存的聊天，创建默认聊天
+          const defaultChat: Chat = {
+            id: 'default',
+            title: '默认对话',
+            messages: [],
+            createdAt: new Date().toISOString()
+          };
+          setChats([defaultChat]);
+          setActiveChat(defaultChat.id);
+        }
+
+        // 加载主题
+        const savedTheme = await storageService.loadTheme();
+        setTheme(savedTheme);
+        
+        console.log('数据加载完成');
+      } catch (error) {
+        console.error('加载保存的数据失败:', error);
+        setErrorMessage('加载保存的数据失败');
+      }
+    };
+
+    loadSavedData();
+  }, []);
+
+  // 保存聊天数据的副作用
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        if (chats.length > 0) {
+          console.log('保存聊天列表:', chats);
+          await storageService.saveChats(chats);
+        }
+        if (activeChat !== null) {
+          console.log('保存活动聊天:', activeChat);
+          await storageService.saveActiveChat(activeChat);
+        }
+      } catch (error) {
+        console.error('保存数据失败:', error);
+        setErrorMessage('保存数据失败');
+      }
+    };
+
+    saveData();
+  }, [chats, activeChat]);
+
+  // 保存主题设置
+  useEffect(() => {
+    if (theme !== null) {
+      console.log('Theme changed, saving:', theme);
+      storageService.saveTheme(theme).catch(error => {
+        console.error('Failed to save theme:', error);
+        setErrorMessage('保存主题设置失败');
+      });
+    }
+  }, [theme]);
 
   // 自动滚动到最新消息
   const scrollToBottom = () => {
@@ -204,7 +279,7 @@ function App() {
   }, [errorMessage]);
 
   return (
-    <div className="flex h-screen" data-theme={theme}>
+    <div className="flex h-screen" data-theme={theme || 'wireframe'}>
 
       {errorMessage && (
         <div className="d-toast d-toast-top d-toast-center">
@@ -220,16 +295,27 @@ function App() {
         <div className="flex-1 overflow-y-auto p-2">
           <ChatList
             chats={chats}
-            activeChat={activeChat}
+            activeChat={activeChat || undefined}
             onChatSelect={setActiveChat}
-            onChatDelete={(chatId) => {
-              if (chatId === activeChat) {
-                const otherChat = chats.find(chat => chat.id !== chatId);
-                if (otherChat) {
-                  setActiveChat(otherChat.id);
+            onChatDelete={async (chatId) => {
+              try {
+                // 先从存储中删除
+                await storageService.deleteChat(chatId);
+                
+                // 然后更新状态
+                if (chatId === activeChat) {
+                  const otherChat = chats.find(chat => chat.id !== chatId);
+                  if (otherChat) {
+                    setActiveChat(otherChat.id);
+                  } else {
+                    setActiveChat(null);
+                  }
                 }
+                setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
+              } catch (error) {
+                console.error('删除聊天失败:', error);
+                setErrorMessage('删除聊天失败');
               }
-              setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
             }}
           />
         </div>
@@ -284,7 +370,7 @@ function App() {
           <div className="flex items-center gap-4">
             <select 
               className="d-select d-select-sm d-select-bordered w-full max-w-xs"
-              value={theme}
+              value={theme || 'wireframe'}
               onChange={(e) => setTheme(e.target.value)}
             >
               <option value="light">🌝 Light</option>

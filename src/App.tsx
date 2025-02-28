@@ -13,6 +13,7 @@ function App() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -28,6 +29,10 @@ function App() {
     const loadSavedData = async () => {
       try {
         console.log('开始加载保存的数据...');
+        
+        // 加载主题
+        const savedTheme = await storageService.loadTheme();
+        setTheme(savedTheme);
         
         // 加载聊天列表
         const savedChats = await storageService.loadChats();
@@ -58,15 +63,13 @@ function App() {
           setChats([defaultChat]);
           setActiveChat(defaultChat.id);
         }
-
-        // 加载主题
-        const savedTheme = await storageService.loadTheme();
-        setTheme(savedTheme);
         
         console.log('数据加载完成');
       } catch (error) {
         console.error('加载保存的数据失败:', error);
         setErrorMessage('加载保存的数据失败');
+      } finally {
+        setIsInitializing(false);
       }
     };
 
@@ -91,19 +94,22 @@ function App() {
       }
     };
 
-    saveData();
-  }, [chats, activeChat]);
+    // 只在初始化完成后才保存数据
+    if (!isInitializing) {
+      saveData();
+    }
+  }, [chats, activeChat, isInitializing]);
 
   // 保存主题设置
   useEffect(() => {
-    if (theme !== null) {
+    if (theme !== null && !isInitializing) {
       console.log('Theme changed, saving:', theme);
       storageService.saveTheme(theme).catch(error => {
         console.error('Failed to save theme:', error);
         setErrorMessage('保存主题设置失败');
       });
     }
-  }, [theme]);
+  }, [theme, isInitializing]);
 
   // 自动滚动到最新消息
   const scrollToBottom = () => {
@@ -282,6 +288,20 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [errorMessage]);
+
+  // 渲染加载界面
+  const renderLoading = () => {
+    return (
+      <div className="flex h-screen items-center justify-center" data-theme={theme || 'wireframe'}>
+        <div className="d-loading d-loading-spinner d-loading-lg"></div>
+      </div>
+    );
+  };
+
+  // 如果还在初始化，显示加载界面
+  if (isInitializing) {
+    return renderLoading();
+  }
 
   return (
     <div className="flex h-screen" data-theme={theme || 'wireframe'}>

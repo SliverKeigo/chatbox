@@ -24,14 +24,14 @@ export class ChatService {
       
       // 使用AI SDK的generateText函数
       const { text } = await generateText({
-        model: openai('Meta-Llama-3.1-8B-Instruct'),
+        model: openai('Meta-Llama-3.1-405B-Instruct'),
         messages: messages,
       });
 
       return text;
     } catch (error) {
       console.error('Chat API Error:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to get response');
+      throw new Error('发送消息失败，请检查网络连接或API配置');
     }
   }
 
@@ -62,11 +62,29 @@ export class ChatService {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Response Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        
+        let errorMessage = '发送消息失败';
+        if (response.status === 401) {
+          errorMessage = 'API密钥无效或已过期';
+        } else if (response.status === 404) {
+          errorMessage = 'API地址无效';
+        } else if (response.status === 429) {
+          errorMessage = 'API调用次数超限';
+        } else if (response.status >= 500) {
+          errorMessage = 'API服务器错误';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       if (!response.body) {
-        throw new Error('Response body is null');
+        throw new Error('响应内容为空');
       }
 
       const reader = response.body.getReader();
@@ -93,15 +111,20 @@ export class ChatService {
               }
             } catch (e) {
               console.error('Error parsing SSE:', line, e);
+              throw new Error('解析响应数据失败');
             }
           }
         }
       }
       
+      if (!fullResponse) {
+        throw new Error('未收到有效的响应内容');
+      }
+      
       return fullResponse;
     } catch (error) {
       console.error('Chat API Error:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to get response');
+      throw new Error(error instanceof Error ? error.message : '发送消息失败');
     }
   }
 

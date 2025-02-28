@@ -11,6 +11,7 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -125,6 +126,7 @@ function App() {
     }));
 
     setIsLoading(true);
+    setErrorMessage(null); // 清除之前的错误消息
 
     try {
       // 创建一个初始的空助手消息用于流式更新
@@ -184,14 +186,33 @@ function App() {
       
     } catch (error) {
       console.error('Failed to get response:', error);
+      setErrorMessage(error instanceof Error ? error.message : '发送消息失败');
     } finally {
       setIsLoading(false);
       setStreamingMessage(null);
     }
   };
 
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        setErrorMessage(null);
+      }, 5000); // 5秒后自动隐藏
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
+
   return (
     <div className="flex h-screen" data-theme={theme}>
+
+      {errorMessage && (
+        <div className="d-toast d-toast-top d-toast-center">
+          <div className="d-alert d-alert-error">
+            <span>{errorMessage}</span>
+          </div>
+        </div>
+      )}
 
       <aside className={`${isSidebarCollapsed ? 'w-0 overflow-hidden' : 'w-56 md:w-64'} transition-all duration-300 flex flex-col h-full d-card rounded-none`}>
         <div className="px-2 py-2 d-card-title flex justify-between items-center">

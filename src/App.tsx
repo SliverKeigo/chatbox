@@ -14,6 +14,7 @@ function App() {
   const [editingTitle, setEditingTitle] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [avatar, setAvatar] = useState<string>('');
   const titleInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -33,6 +34,10 @@ function App() {
         // 加载主题
         const savedTheme = await storageService.loadTheme();
         setTheme(savedTheme);
+        
+        // 加载头像
+        const savedAvatar = await storageService.loadAvatar();
+        setAvatar(savedAvatar);
         
         // 加载聊天列表
         const savedChats = await storageService.loadChats();
@@ -433,7 +438,7 @@ function App() {
             </select>
             <div className="d-avatar">
               <div className="w-10 h-10 rounded-full flex items-center justify-center">
-                <img src="https://api.lolimi.cn/API/dmtx/api.php" alt="用户头像" />
+                <img src={avatar} alt="用户头像" />
               </div>
             </div>
           </div>

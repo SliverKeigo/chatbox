@@ -6,13 +6,17 @@ interface AppState {
   activeChat: string | null;
   theme: string;
   avatar: string;
+  name: string;
 }
+
+
 
 const defaultState: AppState = {
   chats: [],
   activeChat: null,
-  theme: 'light',
-  avatar: 'https://api.multiavatar.com/avatar.svg'
+  theme: 'wireframe',
+  avatar: 'https://ui-avatars.com/api/?name=User',
+  name: 'User'
 };
 
 class StorageService {
@@ -206,7 +210,49 @@ class StorageService {
       return defaultState.theme;
     }
   }
+
+  // 保存头像
+  async saveAvatar(avatar: string) {
+    try {
+      console.log('Saving avatar:', avatar);
+      const store = await this.ensureStore();
+      
+      // 先获取当前头像，避免重复保存相同的值
+      const currentAvatar = await store.get<string>('avatar');
+      if (currentAvatar === avatar) {
+        console.log('Avatar unchanged, skipping save');
+        return;
+      }
+      
+      await store.set('avatar', avatar);
+      await store.save();
+      console.log('Avatar saved successfully:', avatar);
+    } catch (error) {
+      console.error('Failed to save avatar:', error);
+      throw new Error('保存头像失败');
+    }
+  }
+
+  // 加载头像
+  async loadAvatar(): Promise<string> {
+    try {
+      console.log('Loading avatar...');
+      const store = await this.ensureStore();
+      const avatar = await store.get<string>('avatar');
+      console.log('Raw loaded avatar:', avatar);
+      
+      if (!avatar) {
+        // 如果没有存储的头像，生成一个新的并保存
+        console.log('No avatar found, generating and saving new avatar');
+        await this.saveAvatar(defaultState.avatar);
+        return defaultState.avatar;
+      }
+      return avatar;
+    } catch (error) {
+      console.error('Failed to load avatar:', error);
+      return defaultState.avatar;
+    }
+  }
 }
 
-// 导出单例实例
 export const storageService = new StorageService(); 

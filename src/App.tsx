@@ -4,7 +4,7 @@ import { ChatList } from './components/Sidebar/ChatList';
 import { Message } from './components/Chat/Message';
 import { ChatInput } from './components/Chat/ChatInput';
 import { chatService } from './services/api';
-import { storageService } from './services/store';
+import { chatStorage, themeStorage, userStorage } from './services/store/index';
 
 
 function App() {
@@ -32,26 +32,26 @@ function App() {
         console.log('开始加载保存的数据...');
         
         // 加载主题
-        const savedTheme = await storageService.loadTheme();
+        const savedTheme = await themeStorage.loadTheme();
         setTheme(savedTheme);
         
         // 加载头像
-        const savedAvatar = await storageService.loadAvatar();
+        const savedAvatar = await userStorage.loadAvatar();
         setAvatar(savedAvatar);
         
         // 加载聊天列表
-        const savedChats = await storageService.loadChats();
+        const savedChats = await chatStorage.loadChats();
         console.log('加载到的聊天列表:', savedChats);
         
         // 加载上次活动的聊天
-        const savedActiveChat = await storageService.loadActiveChat();
+        const savedActiveChat = await chatStorage.loadActiveChat();
         console.log('加载到的活动聊天:', savedActiveChat);
 
         // 如果有保存的聊天列表，直接使用
         if (savedChats && savedChats.length > 0) {
           setChats(savedChats);
           // 如果有保存的活动聊天并且该聊天存在于列表中，则设置它
-          if (savedActiveChat && savedChats.some(chat => chat.id === savedActiveChat)) {
+          if (savedActiveChat && savedChats.some((chat: Chat) => chat.id === savedActiveChat)) {
             setActiveChat(savedActiveChat);
           } else {
             // 如果没有有效的活动聊天，设置第一个聊天为活动聊天
@@ -70,7 +70,7 @@ function App() {
         }
         
         console.log('数据加载完成');
-      } catch (error) {
+      } catch (error: any) {
         console.error('加载保存的数据失败:', error);
         setErrorMessage('加载保存的数据失败');
       } finally {
@@ -87,13 +87,13 @@ function App() {
       try {
         if (chats.length > 0) {
           console.log('保存聊天列表:', chats);
-          await storageService.saveChats(chats);
+          await chatStorage.saveChats(chats);
         }
         if (activeChat !== null) {
           console.log('保存活动聊天:', activeChat);
-          await storageService.saveActiveChat(activeChat);
+          await chatStorage.saveActiveChat(activeChat);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('保存数据失败:', error);
         setErrorMessage('保存数据失败');
       }
@@ -109,7 +109,7 @@ function App() {
   useEffect(() => {
     if (theme !== null && !isInitializing) {
       console.log('Theme changed, saving:', theme);
-      storageService.saveTheme(theme).catch(error => {
+      themeStorage.saveTheme(theme).catch((error: any) => {
         console.error('Failed to save theme:', error);
         setErrorMessage('保存主题设置失败');
       });
@@ -330,7 +330,7 @@ function App() {
             onChatDelete={async (chatId) => {
               try {
                 // 先从存储中删除
-                await storageService.deleteChat(chatId);
+                await chatStorage.deleteChat(chatId);
                 
                 // 然后更新状态
                 if (chatId === activeChat) {

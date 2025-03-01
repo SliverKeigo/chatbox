@@ -18,6 +18,8 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [avatar, setAvatar] = useState<string>('');
   const [username, setUsername] = useState<string>('');
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const maxRetries = 3;
   const titleInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -225,6 +227,47 @@ function App() {
 
     setIsLoading(true);
     setErrorMessage(null); // 清除之前的错误消息
+    
+    const sendMessageWithRetry = async (retryAttempt = 0): Promise<string> => {
+      try {
+        // 获取当前对话的上下文
+        const context = currentChat?.messages.map(msg => ({
+          role: msg.type,
+          content: msg.content
+        })) || [];
+        
+        // 使用流式响应
+        return await chatService.streamMessage(
+          content, 
+          context,
+          (chunk) => {
+            // 更新流式消息内容
+            setStreamingMessage(prev => {
+              if (prev) {
+                return {
+                  ...prev,
+                  content: prev.content + chunk
+                };
+              }
+              return prev;
+            });
+          }
+        );
+      } catch (error: any) {
+        console.error(`Attempt ${retryAttempt + 1} failed:`, error);
+        
+        // 如果是解析错误且未超过最大重试次数，则重试
+        if (error.message.includes('解析') && retryAttempt < maxRetries) {
+          console.log(`Retrying... (${retryAttempt + 1}/${maxRetries})`);
+          // 短暂延迟后重试
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return sendMessageWithRetry(retryAttempt + 1);
+        }
+        
+        // 超过重试次数或其他错误，抛出
+        throw error;
+      }
+    };
 
     try {
       // 创建一个初始的空助手消息用于流式更新
@@ -237,30 +280,10 @@ function App() {
       };
       
       setStreamingMessage(initialAssistantMessage);
+      setRetryCount(0);
       
-      // 获取当前对话的上下文
-      const context = currentChat?.messages.map(msg => ({
-        role: msg.type,
-        content: msg.content
-      })) || [];
-      
-      // 使用流式响应
-      const fullResponse = await chatService.streamMessage(
-        content, 
-        context,
-        (chunk) => {
-          // 更新流式消息内容
-          setStreamingMessage(prev => {
-            if (prev) {
-              return {
-                ...prev,
-                content: prev.content + chunk
-              };
-            }
-            return prev;
-          });
-        }
-      );
+      // 使用重试机制发送消息
+      const fullResponse = await sendMessageWithRetry();
       
       // 流式响应完成后，更新最终消息
       const finalAssistantMessage: MessageType = {
@@ -282,9 +305,27 @@ function App() {
         return chat;
       }));
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to get response:', error);
-      setErrorMessage(error instanceof Error ? error.message : '发送消息失败');
+      
+      // 提供更友好的错误消息
+      let friendlyError = error instanceof Error ? error.message : '发送消息失败';
+      
+      if (friendlyError.includes('解析响应数据失败')) {
+        friendlyError = '服务器返回了无效数据，请稍后重试';
+      } else if (friendlyError.includes('超时')) {
+        friendlyError = '请求超时，请检查网络连接后重试';
+      } else if (friendlyError.includes('API密钥')) {
+        friendlyError = 'API密钥无效或已过期，请更新API配置';
+      } else if (friendlyError.includes('Windows环境连接API失败')) {
+        friendlyError = 'Windows环境连接API失败，请检查网络设置、代理或防火墙配置';
+      } else if (friendlyError.includes('Failed to fetch')) {
+        friendlyError = '网络请求失败，请检查网络连接或代理设置';
+      } else if (friendlyError.includes('网络请求失败')) {
+        friendlyError = '网络连接异常，请检查网络状态后重试';
+      }
+      
+      setErrorMessage(friendlyError);
     } finally {
       setIsLoading(false);
       setStreamingMessage(null);

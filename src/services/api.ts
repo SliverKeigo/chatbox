@@ -17,6 +17,9 @@ const openai = createOpenAI({
 });
 
 export class ChatService {
+  // 添加重试计数器和最大重试次数
+  private maxStreamRetries = 3;
+  
   async sendMessage(message: string, context: ChatMessage[] = []): Promise<string> {
     try {
       // 将上下文消息转换为适合AI SDK的格式
@@ -37,43 +40,88 @@ export class ChatService {
 
   // 使用AI SDK的streamText函数实现流式响应
   async streamMessage(message: string, context: ChatMessage[] = [], onChunk: (chunk: string) => void): Promise<string> {
+    // 添加重试逻辑
+    return this.streamMessageWithRetry(message, context, onChunk, 0);
+  }
+  
+  // 带重试的流式消息实现
+  private async streamMessageWithRetry(
+    message: string, 
+    context: ChatMessage[] = [], 
+    onChunk: (chunk: string) => void,
+    retryCount: number
+  ): Promise<string> {
     try {
       // 记录诊断信息
       const diagnosticInfo = {
         timestamp: new Date().toISOString(),
         platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown',
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-        apiUrl: API_URL
+        apiUrl: API_URL,
+        retryAttempt: retryCount + 1
       };
       
-      console.log('API请求诊断信息:', diagnosticInfo);
+      console.log(`API请求诊断信息 (尝试 ${retryCount + 1}/${this.maxStreamRetries + 1}):`, diagnosticInfo);
       
       // 将上下文消息转换为适合AI SDK的格式
       const messages = this.formatMessages(context, message);
       
       // 使用AI SDK的streamText函数
       try {
+        // 创建一个更长的超时时间
+        const timeoutMs = 90000; // 90秒
+        
         const { textStream } = streamText({
           model: openai('Meta-Llama-3.1-8B-Instruct'),
           messages: messages,
-          abortSignal: this.createTimeoutSignal(60000),
+          abortSignal: this.createTimeoutSignal(timeoutMs),
         });
         
         let fullResponse = '';
+        let chunkCount = 0;
+        let lastChunkTime = Date.now();
+        let hasReceivedValidData = false;
         
-        for await (const textPart of textStream) {
-          fullResponse += textPart;
-          onChunk(textPart);
-        }
+        // 设置一个接收数据的超时检查
+        const dataTimeoutMs = 30000; // 30秒
+        const dataTimeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            if (!hasReceivedValidData) {
+              reject(new Error('数据接收超时'));
+            }
+          }, dataTimeoutMs);
+        });
         
-        if (!fullResponse) {
-          console.warn('Empty response received from API');
-          return '抱歉，服务器返回了空响应。请重试。';
+        // 使用Promise.race来处理流式响应或超时
+        const streamPromise = (async () => {
+          for await (const textPart of textStream) {
+            // 更新计数器和时间戳
+            chunkCount++;
+            lastChunkTime = Date.now();
+            
+            if (textPart && textPart.trim()) {
+              hasReceivedValidData = true;
+              fullResponse += textPart;
+              onChunk(textPart);
+            }
+          }
+          
+          return fullResponse;
+        })();
+        
+        // 等待流式响应完成或超时
+        fullResponse = await Promise.race([streamPromise, dataTimeoutPromise]);
+        
+        console.log(`流式响应完成: 收到 ${chunkCount} 个数据块，总长度 ${fullResponse.length} 字符`);
+        
+        if (!fullResponse || fullResponse.trim().length === 0) {
+          console.warn('收到空响应，抛出错误');
+          throw new Error('空响应');
         }
         
         return fullResponse;
       } catch (streamError: any) {
-        console.error('Stream operation failed:', streamError, diagnosticInfo);
+        console.error(`流式操作失败 (尝试 ${retryCount + 1}/${this.maxStreamRetries + 1}):`, streamError, diagnosticInfo);
         
         // 检查是否为Windows环境中的特定错误
         if (typeof window !== 'undefined' && 
@@ -88,15 +136,51 @@ export class ChatService {
           return await this.fallbackStreamRequest(messages, onChunk);
         }
         
+        // 检查是否可以重试
+        if (retryCount < this.maxStreamRetries && 
+            (streamError.message.includes('空响应') || 
+             streamError.message.includes('数据接收超时') ||
+             streamError.message.includes('Failed to fetch') ||
+             streamError.message.includes('network') ||
+             streamError.message.includes('解析'))) {
+          
+          const delayMs = 2000 * (retryCount + 1); // 递增延迟
+          console.log(`将在 ${delayMs}ms 后重试请求 (${retryCount + 1}/${this.maxStreamRetries})...`);
+          
+          // 延迟后重试
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          return this.streamMessageWithRetry(message, context, onChunk, retryCount + 1);
+        }
+        
         // 重新抛出原始错误
         throw streamError;
       }
     } catch (error: any) {
-      console.error('Chat API Error:', error);
+      console.error(`聊天API错误 (尝试 ${retryCount + 1}/${this.maxStreamRetries + 1}):`, error);
       
       // 检查是否为中止错误（用户取消或超时）
       if (error.name === 'AbortError') {
         throw new Error('请求超时，请检查网络连接后重试');
+      }
+      
+      // 空响应错误处理
+      if (error.message === '空响应') {
+        throw new Error('服务器返回了空响应，请稍后重试');
+      }
+      
+      // 数据接收超时
+      if (error.message === '数据接收超时') {
+        // 检查是否可以重试
+        if (retryCount < this.maxStreamRetries) {
+          const delayMs = 2000 * (retryCount + 1); // 递增延迟
+          console.log(`数据接收超时，将在 ${delayMs}ms 后重试请求 (${retryCount + 1}/${this.maxStreamRetries})...`);
+          
+          // 延迟后重试
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          return this.streamMessageWithRetry(message, context, onChunk, retryCount + 1);
+        } else {
+          throw new Error('多次请求超时，请检查网络连接或API服务状态');
+        }
       }
       
       // Windows特定错误处理

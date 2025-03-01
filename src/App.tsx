@@ -228,90 +228,128 @@ function App() {
     setIsLoading(true);
     setErrorMessage(null); // 清除之前的错误消息
     
-    const sendMessageWithRetry = async (retryAttempt = 0): Promise<string> => {
-      try {
-        // 获取当前对话的上下文
-        const context = currentChat?.messages.map(msg => ({
-          role: msg.type,
-          content: msg.content
-        })) || [];
-        
-        // 使用流式响应
-        return await chatService.streamMessage(
-          content, 
-          context,
-          (chunk) => {
-            // 更新流式消息内容
-            setStreamingMessage(prev => {
-              if (prev) {
-                return {
-                  ...prev,
-                  content: prev.content + chunk
-                };
-              }
-              return prev;
-            });
-          }
-        );
-      } catch (error: any) {
-        console.error(`Attempt ${retryAttempt + 1} failed:`, error);
-        
-        // 如果是解析错误且未超过最大重试次数，则重试
-        if (error.message.includes('解析') && retryAttempt < maxRetries) {
-          console.log(`Retrying... (${retryAttempt + 1}/${maxRetries})`);
-          // 短暂延迟后重试
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return sendMessageWithRetry(retryAttempt + 1);
-        }
-        
-        // 超过重试次数或其他错误，抛出
-        throw error;
-      }
+    // 创建一个初始的空助手消息用于流式更新
+    const assistantMessageId = generateMessageId();
+    const initialAssistantMessage: MessageType = {
+      id: assistantMessageId,
+      content: '',
+      timestamp: new Date().toISOString(),
+      type: 'assistant'
     };
-
+    
+    // 不立即设置streamingMessage，而是等待第一个数据块到达
+    
+    // 添加超时处理
+    let responseTimeout: NodeJS.Timeout | null = setTimeout(() => {
+      if (!streamingMessage || !streamingMessage.content.trim()) {
+        console.warn('响应超时 - 未收到有效数据');
+        setErrorMessage('响应超时，未收到数据');
+        setIsLoading(false);
+      }
+    }, 20000); // 20秒超时
+    
     try {
-      // 创建一个初始的空助手消息用于流式更新
-      const assistantMessageId = generateMessageId();
-      const initialAssistantMessage: MessageType = {
-        id: assistantMessageId,
-        content: '',
-        timestamp: new Date().toISOString(),
-        type: 'assistant'
-      };
+      // 获取当前对话的上下文
+      const context = currentChat?.messages.map(msg => ({
+        role: msg.type,
+        content: msg.content
+      })) || [];
       
-      setStreamingMessage(initialAssistantMessage);
-      setRetryCount(0);
+      let messageAdded = false; // 跟踪消息是否已添加到UI
       
-      // 使用重试机制发送消息
-      const fullResponse = await sendMessageWithRetry();
+      // 直接使用API服务发送消息，API服务内部已经实现了重试逻辑
+      const fullResponse = await chatService.streamMessage(
+        content, 
+        context,
+        (chunk) => {
+          if (chunk && chunk.trim()) {
+            // 第一个有效数据块到达时创建消息气泡
+            if (!messageAdded) {
+              messageAdded = true; // 标记消息已添加
+              console.log('创建初始消息气泡');
+              
+              // 检查是否已经存在相同ID的消息
+              const messageExists = currentChat?.messages.some(msg => msg.id === initialAssistantMessage.id) || false;
+              
+              if (!messageExists) {
+                setStreamingMessage({
+                  ...initialAssistantMessage,
+                  content: chunk
+                });
+              }
+            } else {
+              // 更新流式消息内容
+              setStreamingMessage(prev => {
+                if (prev) {
+                  return {
+                    ...prev,
+                    content: prev.content + chunk
+                  };
+                }
+                return prev;
+              });
+            }
+          }
+        }
+      );
+      
+      // 清除超时
+      if (responseTimeout) {
+        clearTimeout(responseTimeout);
+        responseTimeout = null;
+      }
       
       // 流式响应完成后，更新最终消息
-      const finalAssistantMessage: MessageType = {
-        id: assistantMessageId,
-        content: fullResponse,
-        timestamp: new Date().toISOString(),
-        type: 'assistant'
-      };
-      
-      // 更新聊天记录，只添加助手消息（用户消息已经添加过了）
-      setChats(prevChats => prevChats.map(chat => {
-        if (chat.id === activeChat) {
-          return {
-            ...chat,
-            messages: [...chat.messages, finalAssistantMessage],
-            lastMessage: finalAssistantMessage
-          };
-        }
-        return chat;
-      }));
-      
+      if (fullResponse && fullResponse.trim()) {
+        const finalAssistantMessage: MessageType = {
+          id: assistantMessageId,
+          content: fullResponse,
+          timestamp: new Date().toISOString(),
+          type: 'assistant'
+        };
+        
+        // 更新聊天记录，只添加助手消息（用户消息已经添加过了）
+        setChats(prevChats => prevChats.map(chat => {
+          if (chat.id === activeChat) {
+            // 检查是否已经存在相同ID的消息，避免重复
+            const messageExists = chat.messages.some(msg => msg.id === assistantMessageId);
+            if (messageExists) {
+              // 如果消息已存在，则更新内容而不是添加新消息
+              return {
+                ...chat,
+                messages: chat.messages.map(msg => 
+                  msg.id === assistantMessageId ? finalAssistantMessage : msg
+                ),
+                lastMessage: finalAssistantMessage
+              };
+            } else {
+              // 如果消息不存在，则添加新消息
+              return {
+                ...chat,
+                messages: [...chat.messages, finalAssistantMessage],
+                lastMessage: finalAssistantMessage
+              };
+            }
+          }
+          return chat;
+        }));
+      } else {
+        // 如果响应为空，显示错误
+        setErrorMessage('收到了空响应，请重试');
+      }
     } catch (error: any) {
       console.error('Failed to get response:', error);
+      
+      // 清除超时
+      if (responseTimeout) {
+        clearTimeout(responseTimeout);
+        responseTimeout = null;
+      }
       
       // 提供更友好的错误消息
       let friendlyError = error instanceof Error ? error.message : '发送消息失败';
       
-      if (friendlyError.includes('解析响应数据失败')) {
+      if (friendlyError.includes('解析响应数据失败') || friendlyError.includes('空响应')) {
         friendlyError = '服务器返回了无效数据，请稍后重试';
       } else if (friendlyError.includes('超时')) {
         friendlyError = '请求超时，请检查网络连接后重试';
@@ -328,6 +366,8 @@ function App() {
       setErrorMessage(friendlyError);
     } finally {
       setIsLoading(false);
+      
+      // 确保在完成后清除streamingMessage
       setStreamingMessage(null);
     }
   };
@@ -488,17 +528,14 @@ function App() {
           {currentChat?.messages.map(message => (
             <Message key={message.id} message={message} />
           ))}
-          {streamingMessage && (
+          {streamingMessage && streamingMessage.content.trim() && 
+           // 确保不显示已经在currentChat.messages中的消息
+           !currentChat?.messages.some(msg => msg.id === streamingMessage.id) && (
             <Message key={streamingMessage.id} message={streamingMessage} />
           )}
           {isLoading && !streamingMessage && (
-            <div className="d-chat d-chat-start mb-4">
-              <div className="d-chat-header text-xs mb-1">
-                AI助手
-              </div>
-              <div className="d-chat-bubble">
-                <span className="d-loading d-loading-dots d-loading-sm"></span>
-              </div>
+            <div className="flex justify-center my-4">
+              <span className="d-loading d-loading-dots d-loading-md"></span>
             </div>
           )}
           <div ref={messagesEndRef} />

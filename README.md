@@ -7,6 +7,7 @@ ChatBox是一个基于React和Tauri构建的现代化聊天应用，支持与AI�
 - 🖼️ **头像预览** - 优化的头像上传界面，支持实时预览
 - ⚙️ **快捷设置** - 新增设置按钮，方便快速访问系统设置
 - 🔄 **即时主题切换** - 主题切换后立即生效，无需刷新页面
+- 🤖 **多AI提供商** - 支持OpenAI服务提供商
 
 ## 功能特点
 
@@ -20,6 +21,9 @@ ChatBox是一个基于React和Tauri构建的现代化聊天应用，支持与AI�
 - 📱 **响应式设计** - 适配不同屏幕尺寸的设备
 - 📜 **自动滚动** - 新消息到达时自动滚动到最新位置
 - 👤 **用户个性化** - 自定义用户名和头像，增强个人体验
+- 🔌 **多服务提供商** - 支持OpenAIAI服务提供商
+- 🔍 **模型自动获取** - 自动获取并列出各服务提供商的可用模型
+- 🔄 **动态切换模型** - 在对话过程中随时切换不同的AI模型
 
 ## 技术栈
 
@@ -27,7 +31,7 @@ ChatBox是一个基于React和Tauri构建的现代化聊天应用，支持与AI�
 - **构建工具**: Vite
 - **桌面应用**: Tauri
 - **样式**: Tailwind CSS + DaisyUI
-- **AI集成**: Vercel AI SDK
+- **AI集成**: AI SDK
 - **代码高亮**: React Syntax Highlighter
 - **Markdown渲染**: React Markdown
 
@@ -41,14 +45,14 @@ ChatBox是一个基于React和Tauri构建的现代化聊天应用，支持与AI�
 
 ### 安装
 
-1. 克隆仓库
+克隆仓库
 
 ```bash
 git clone https://github.com/SliverKeigo/chatbox.git
 cd chatbox
 ```
 
-1. 安装依赖
+安装依赖
 
 ```bash
 # 使用npm
@@ -98,8 +102,10 @@ bun run tauri build
 
 ## 致谢
 
-- [Vercel AI SDK](https://sdk.vercel.ai/)
+- [AI SDK](https://sdk.vercel.ai/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [DaisyUI](https://daisyui.com/)
 - [Tauri](https://tauri.app/)
 - [React](https://reactjs.org/)
+- [Groq](https://groq.com/)
+- [Ollama](https://ollama.ai/)

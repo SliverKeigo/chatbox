@@ -33,6 +33,7 @@ export function ModelSettingsBase({
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importText, setImportText] = useState('');
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   
   // 组件加载时尝试从store加载模型列表
   useEffect(() => {
@@ -104,7 +105,7 @@ export function ModelSettingsBase({
     }
 
     try {
-
+      // 解析输入的模型列表（格式：xxx,xxx,xxx）
       const modelIds = importText.split(',').map(id => id.trim()).filter(id => id);
       
       if (modelIds.length === 0) {
@@ -112,10 +113,10 @@ export function ModelSettingsBase({
         return;
       }
 
-
+      // 创建模型信息对象
       const newModels: ModelInfo[] = modelIds.map(id => ({
         id,
-        name: id
+        name: id // 使用ID作为名称
       }));
 
       // 合并现有模型和新导入的模型
@@ -141,6 +142,23 @@ export function ModelSettingsBase({
     } catch (error: any) {
       console.error('导入模型失败:', error);
       setError(error.message || '导入模型失败');
+    }
+  };
+  
+  // 处理删除所有模型
+  const handleDeleteAllModels = async () => {
+    try {
+
+      setAvailableModels([]);
+
+      await modelStorage.saveProviderModels(providerType, []);
+      console.log(`已删除${providerType}的所有模型`);
+
+      setIsDeleteConfirmOpen(false);
+      setError(null);
+    } catch (error: any) {
+      console.error('删除模型失败:', error);
+      setError(error.message || '删除模型失败');
     }
   };
   
@@ -191,6 +209,14 @@ export function ModelSettingsBase({
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-lg font-medium">可用模型</h3>
             <div className="flex gap-2">
+
+                <button 
+                  className="d-btn d-btn-sm d-btn-error"
+                  onClick={() => setIsDeleteConfirmOpen(true)}
+                >
+                  删除所有模型
+                </button>
+
               <button 
                 className="d-btn d-btn-sm d-btn-outline"
                 onClick={() => setIsImportModalOpen(true)}
@@ -218,26 +244,28 @@ export function ModelSettingsBase({
           )}
           
           {availableModels.length > 0 ? (
-            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-              <table className="d-table w-full">
-                <thead className="sticky top-0 bg-base-100 z-10">
-                  <tr>
-                    <th>名称</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availableModels.map(model => (
-                    <tr 
-                      key={model.id}
-                      className={selectedModel === model.id ? 'bg-primary/10' : 'hover:bg-base-200 cursor-pointer'}
-                      onClick={() => onModelChange(model.id)}
-                    >
-                      <td>{model.name}</td>
+            <>
+              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                <table className="d-table w-full">
+                  <thead className="sticky top-0 bg-base-100 z-10">
+                    <tr>
+                      <th>名称</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {availableModels.map(model => (
+                      <tr 
+                        key={model.id}
+                        className={selectedModel === model.id ? 'bg-primary/10' : 'hover:bg-base-200 cursor-pointer'}
+                        onClick={() => onModelChange(model.id)}
+                      >
+                        <td>{model.name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="text-center py-4 text-base-content/70">
               {isLoading ? '加载中...' : '点击"获取模型"按钮获取可用模型列表，或点击"导入模型"手动添加'}
@@ -274,6 +302,30 @@ export function ModelSettingsBase({
                 onClick={handleImport}
               >
                 导入
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 删除确认对话框 */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="d-modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">确认删除</h3>
+            <p className="mb-4">确定要删除所有模型吗？此操作无法撤销。</p>
+            <div className="d-modal-action">
+              <button 
+                className="d-btn d-btn-outline"
+                onClick={() => setIsDeleteConfirmOpen(false)}
+              >
+                取消
+              </button>
+              <button 
+                className="d-btn d-btn-error"
+                onClick={handleDeleteAllModels}
+              >
+                确认删除
               </button>
             </div>
           </div>

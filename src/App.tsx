@@ -492,6 +492,7 @@ function App() {
             chats={chats} 
             activeChat={activeChat || undefined} 
             onChatSelect={setActiveChat} 
+            isSidebarCollapsed={isSidebarCollapsed}
             onChatDelete={async (chatId) => {
               try {
                 await chatStorage.deleteChat(chatId);

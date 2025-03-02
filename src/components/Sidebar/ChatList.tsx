@@ -4,11 +4,12 @@ import { useState, MouseEvent, useEffect, useRef } from 'react';
 interface ChatListProps {
   chats: Chat[];
   activeChat?: string;
+  isSidebarCollapsed?: boolean;
   onChatSelect: (chatId: string) => void;
   onChatDelete?: (chatId: string) => void;
 }
 
-export function ChatList({ chats, activeChat, onChatSelect, onChatDelete }: ChatListProps) {
+export function ChatList({ chats, activeChat, onChatSelect, onChatDelete, isSidebarCollapsed = false }: ChatListProps) {
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -235,14 +236,16 @@ export function ChatList({ chats, activeChat, onChatSelect, onChatDelete }: Chat
         </div>
       </div>
 
-      {/* 分割线 - 放在侧边栏的右侧边缘，高度与整个聊天界面一致 */}
-      <div 
-        className="fixed top-0 bottom-0 w-1 bg-base-300 hover:bg-primary cursor-col-resize group z-10"
-        style={{ left: `${containerWidth}px` }}
-        onMouseDown={handleResizeStart}
-      >
-        <div className="absolute inset-y-0 -right-1 -left-1 group-hover:bg-primary/10"></div>
-      </div>
+
+      {!isSidebarCollapsed && containerWidth > 0 && (
+        <div 
+          className="fixed top-0 bottom-0 w-1 bg-base-300 hover:bg-primary cursor-col-resize group z-10"
+          style={{ left: `${containerWidth}px` }}
+          onMouseDown={handleResizeStart}
+        >
+          <div className="absolute inset-y-0 -right-1 -left-1 group-hover:bg-primary/10"></div>
+        </div>
+      )}
 
       {contextMenu.visible && (
         <div 

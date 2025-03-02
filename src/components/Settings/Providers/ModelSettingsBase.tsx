@@ -31,6 +31,8 @@ export function ModelSettingsBase({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importText, setImportText] = useState('');
   
   // 组件加载时尝试从store加载模型列表
   useEffect(() => {
@@ -93,6 +95,54 @@ export function ModelSettingsBase({
       setIsLoading(false);
     }
   };
+
+  // 处理模型导入
+  const handleImport = async () => {
+    if (!importText.trim()) {
+      setError('请输入要导入的模型');
+      return;
+    }
+
+    try {
+
+      const modelIds = importText.split(',').map(id => id.trim()).filter(id => id);
+      
+      if (modelIds.length === 0) {
+        setError('没有找到有效的模型ID');
+        return;
+      }
+
+
+      const newModels: ModelInfo[] = modelIds.map(id => ({
+        id,
+        name: id
+      }));
+
+      // 合并现有模型和新导入的模型
+      const existingIds = new Set(availableModels.map(model => model.id));
+      const uniqueNewModels = newModels.filter(model => !existingIds.has(model.id));
+      
+      if (uniqueNewModels.length === 0) {
+        setError('所有模型已存在，未添加新模型');
+        return;
+      }
+
+      const updatedModels = [...availableModels, ...uniqueNewModels];
+      setAvailableModels(updatedModels);
+      
+      // 保存更新后的模型列表
+      await modelStorage.saveProviderModels(providerType, updatedModels);
+      console.log(`导入${uniqueNewModels.length}个新模型，总计${updatedModels.length}个模型`);
+      
+      // 关闭导入对话框并清空输入
+      setIsImportModalOpen(false);
+      setImportText('');
+      setError(null);
+    } catch (error: any) {
+      console.error('导入模型失败:', error);
+      setError(error.message || '导入模型失败');
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -140,17 +190,25 @@ export function ModelSettingsBase({
         <div className="d-card-body">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-lg font-medium">可用模型</h3>
-            <button 
-              className="d-btn d-btn-sm d-btn-outline"
-              onClick={fetchModels}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="d-loading d-loading-spinner d-loading-xs"></span>
-              ) : (
-                <span>获取模型</span>
-              )}
-            </button>
+            <div className="flex gap-2">
+              <button 
+                className="d-btn d-btn-sm d-btn-outline"
+                onClick={() => setIsImportModalOpen(true)}
+              >
+                导入模型
+              </button>
+              <button 
+                className="d-btn d-btn-sm d-btn-outline"
+                onClick={fetchModels}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="d-loading d-loading-spinner d-loading-xs"></span>
+                ) : (
+                  <span>获取模型</span>
+                )}
+              </button>
+            </div>
           </div>
           
           {error && (
@@ -182,11 +240,45 @@ export function ModelSettingsBase({
             </div>
           ) : (
             <div className="text-center py-4 text-base-content/70">
-              {isLoading ? '加载中...' : '点击"获取模型"按钮获取可用模型列表'}
+              {isLoading ? '加载中...' : '点击"获取模型"按钮获取可用模型列表，或点击"导入模型"手动添加'}
             </div>
           )}
         </div>
       </div>
+
+      {/* 导入模型对话框 */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="d-modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">导入模型</h3>
+            <p className="mb-2 text-sm opacity-70">请输入模型ID列表，以逗号分隔（例如：model1,model2,model3）</p>
+            <textarea 
+              className="d-textarea d-textarea-bordered w-full h-24" 
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              placeholder="model1,model2,model3"
+            />
+            <div className="d-modal-action">
+              <button 
+                className="d-btn d-btn-outline"
+                onClick={() => {
+                  setIsImportModalOpen(false);
+                  setImportText('');
+                  setError(null);
+                }}
+              >
+                取消
+              </button>
+              <button 
+                className="d-btn d-btn-primary"
+                onClick={handleImport}
+              >
+                导入
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

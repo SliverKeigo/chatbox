@@ -1,3 +1,4 @@
-export { chatStorage } from './chat';
-export { themeStorage } from './theme';
-export { userStorage } from './user'; 
+export * from './chat';
+export * from './theme';
+export * from './user';
+export * from './proxy'; 

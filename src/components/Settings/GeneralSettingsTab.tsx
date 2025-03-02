@@ -1,17 +1,21 @@
 import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import { themeStorage, userStorage } from '../../services/store/index';
+import { proxyStorage, ProxyConfig, ProxyType } from '../../services/store/proxy';
 
-interface GeneralSettingsTabProps {
+export interface GeneralSettingsTabProps {
   onClose: () => void;
   onThemeChange?: (theme: string) => void;
   onAvatarChange?: (avatar: string) => void;
   onUsernameChange?: (username: string) => void;
+  onProxyChange?: (config: ProxyConfig) => void;
 }
 
-export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange, onUsernameChange }: GeneralSettingsTabProps) {
+export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange, onUsernameChange, onProxyChange }: GeneralSettingsTabProps) {
   const [username, setUsername] = useState<string>('');
   const [avatar, setAvatar] = useState<string>('');
   const [theme, setTheme] = useState<string>('wireframe');
+  const [proxyType, setProxyType] = useState<ProxyType>('none');
+  const [proxyAddress, setProxyAddress] = useState('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,20 +26,21 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange, onU
       try {
         setIsLoading(true);
         
-        // 加载用户名
         const savedName = await userStorage.loadName();
         setUsername(savedName);
-        
-        // 加载头像
+
         const savedAvatar = await userStorage.loadAvatar();
         setAvatar(savedAvatar);
-        
-        // 加载主题
+
         const savedTheme = await themeStorage.loadTheme();
         setTheme(savedTheme || 'wireframe');
+
+        const savedProxyConfig = await proxyStorage.loadProxyConfig();
+        if (savedProxyConfig) {
+          setProxyType(savedProxyConfig.type);
+          setProxyAddress(savedProxyConfig.address || '');
+        }
         
-        // 这里可以加载其他设置，如果有的话
-        // 目前使用默认值
       } catch (error) {
         console.error('加载设置失败:', error);
       } finally {
@@ -53,26 +58,36 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange, onU
       
       // 保存用户名
       await userStorage.saveName(username);
-      // 调用用户名更新回调
+
       if (onUsernameChange) {
         onUsernameChange(username);
       }
       
       // 保存头像
       await userStorage.saveAvatar(avatar);
-      // 调用头像更新回调
+
       if (onAvatarChange) {
         onAvatarChange(avatar);
       }
       
       // 保存主题
       await themeStorage.saveTheme(theme);
-      // 调用主题更新回调
+
       if (onThemeChange) {
         onThemeChange(theme);
       }
       
-      // 关闭设置对话框
+
+      const proxyConfig: ProxyConfig = {
+        type: proxyType,
+        address: proxyType === 'custom' ? proxyAddress : undefined
+      };
+      await proxyStorage.saveProxyConfig(proxyConfig);
+      if (onProxyChange) {
+        onProxyChange(proxyConfig);
+      }
+      
+
       onClose();
       
     } catch (error) {
@@ -581,6 +596,58 @@ export function GeneralSettingsTab({ onClose, onThemeChange, onAvatarChange, onU
               checked={theme === 'sunset'}
               onChange={handleThemeChange}
             />
+          </div>
+        </div>
+      </div>
+
+      <div className="form-control">
+        <label className="d-label">
+          <span className="d-label-text">代理设置</span>
+        </label>
+        
+        <div className="flex flex-wrap gap-2 justify-center">
+          <div className="d-join">
+            <input
+              type="radio"
+              name="proxy-type"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="不使用代理"
+              value="none"
+              checked={proxyType === 'none'}
+              onChange={() => setProxyType('none')}
+            />
+            <input
+              type="radio"
+              name="proxy-type"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="使用系统代理"
+              value="system"
+              checked={proxyType === 'system'}
+              onChange={() => setProxyType('system')}
+            />
+            <input
+              type="radio"
+              name="proxy-type"
+              className="d-btn d-theme-controller d-join-item"
+              aria-label="自定义代理"
+              value="custom"
+              checked={proxyType === 'custom'}
+              onChange={() => setProxyType('custom')}
+            />
+          </div>
+          
+          <div className="d-join">
+            {proxyType === 'custom' && (
+              <div className="mt-2">
+                <input
+                  type="text"
+                  placeholder="代理地址 (例如: http://127.0.0.1:7890)"
+                  className="d-input d-input-bordered w-full"
+                  value={proxyAddress}
+                  onChange={(e) => setProxyAddress(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

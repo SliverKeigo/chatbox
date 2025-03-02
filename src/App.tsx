@@ -6,6 +6,7 @@ import { ChatInput } from './components/Chat/ChatInput';
 import { SettingsDialog } from './components/Settings/SettingsDialog';
 import { chatService } from './services/api';
 import { chatStorage, themeStorage, userStorage } from './services/store/index';
+import { proxyStorage, ProxyConfig } from './services/store/proxy';
 
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<MessageType | null>(null);
+  const [proxyConfig, setProxyConfig] = useState<ProxyConfig | null>(null);
   
   const currentChat = chats.find(chat => chat.id === activeChat) || null;
 
@@ -47,6 +49,13 @@ function App() {
         // 加载用户名
         const savedUsername = await userStorage.loadName();
         setUsername(savedUsername);
+        
+        // 加载代理设置
+        const savedProxyConfig = await proxyStorage.loadProxyConfig();
+        setProxyConfig(savedProxyConfig);
+        
+        // 设置API服务的代理
+        chatService.setProxyConfig(savedProxyConfig);
         
         // 加载聊天列表
         const savedChats = await chatStorage.loadChats();
@@ -387,6 +396,12 @@ function App() {
     setUsername(newUsername);
   };
 
+  // 更新代理设置
+  const handleProxyChange = (newProxyConfig: ProxyConfig) => {
+    setProxyConfig(newProxyConfig);
+    chatService.setProxyConfig(newProxyConfig);
+  };
+
   useEffect(() => {
     if (errorMessage) {
       const timer = setTimeout(() => {
@@ -555,6 +570,7 @@ function App() {
         onThemeChange={handleThemeChange}
         onAvatarChange={handleAvatarChange}
         onUsernameChange={handleUsernameChange}
+        onProxyChange={handleProxyChange}
       />
     </div>
   );

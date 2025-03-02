@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText, streamText } from 'ai';
+import { ProxyConfig } from './store/proxy';
 
 const API_URL = "https://new.wei.bi/v1";
 const API_KEY = "sk-DW85c4MRi0VYKS8IW1GhaJZvn6HPZmcd558unQiDD1BjgC4f";
@@ -10,15 +11,45 @@ export interface ChatMessage {
 }
 
 // 创建OpenAI提供程序实例
-const openai = createOpenAI({
-  apiKey: API_KEY,
-  baseURL: API_URL,
-  compatibility: 'compatible',
-});
+const createOpenAIClient = (proxyConfig?: ProxyConfig | null) => {
+  const options: any = {
+    apiKey: API_KEY,
+    baseURL: API_URL,
+    compatibility: 'compatible',
+  };
+
+  if (proxyConfig) {
+    if (proxyConfig.type === 'custom' && proxyConfig.address) {
+      options.fetch = (url: string, options: RequestInit) => {
+        const fetchOptions = {
+          ...options,
+          agent: proxyConfig.address
+        };
+        return fetch(url, fetchOptions);
+      };
+    } else if (proxyConfig.type === 'system') {
+      console.log('使用系统代理');
+    }
+  }
+
+  return createOpenAI(options);
+};
+
+// 初始化默认客户端
+let openai = createOpenAIClient();
 
 export class ChatService {
   // 添加重试计数器和最大重试次数
   private maxStreamRetries = 3;
+  private currentProxyConfig: ProxyConfig | null = null;
+  
+  // 设置代理配置
+  setProxyConfig(config: ProxyConfig | null) {
+    console.log('设置API代理配置:', config);
+    this.currentProxyConfig = config;
+    // 重新创建OpenAI客户端
+    openai = createOpenAIClient(config);
+  }
   
   async sendMessage(message: string, context: ChatMessage[] = []): Promise<string> {
     try {
@@ -58,6 +89,7 @@ export class ChatService {
         platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown',
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         apiUrl: API_URL,
+        proxyType: this.currentProxyConfig?.type || 'none',
         retryAttempt: retryCount + 1
       };
       

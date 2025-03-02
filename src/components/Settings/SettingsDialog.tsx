@@ -1,16 +1,26 @@
 import { GeneralSettingsTab } from './GeneralSettingsTab';
 import { ModelSettingsTab } from './ModelSettingsTab';
+import { ApiSettingsTab } from './ApiSettingsTab';
 import { useState } from 'react';
+import { ProxyConfig } from '../../services/store/proxy';
 
-interface SettingsDialogProps {
+export interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onThemeChange?: (theme: string) => void;
-  onAvatarChange?: (avatar: string) => void;
-  onUsernameChange?: (username: string) => void;
+  onThemeChange: (theme: string) => void;
+  onAvatarChange: (avatar: string) => void;
+  onUsernameChange: (username: string) => void;
+  onProxyChange: (config: ProxyConfig) => void;
 }
 
-export function SettingsDialog({ isOpen, onClose, onThemeChange, onAvatarChange, onUsernameChange }: SettingsDialogProps) {
+export function SettingsDialog({ 
+  isOpen, 
+  onClose, 
+  onThemeChange, 
+  onAvatarChange, 
+  onUsernameChange,
+  onProxyChange
+}: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'model'>('general');
   
   if (!isOpen) return null;
@@ -54,9 +64,10 @@ export function SettingsDialog({ isOpen, onClose, onThemeChange, onAvatarChange,
             {activeTab === 'general' ? (
               <GeneralSettingsTab 
                 onClose={onClose} 
-                onThemeChange={onThemeChange}
+                onThemeChange={onThemeChange} 
                 onAvatarChange={onAvatarChange}
                 onUsernameChange={onUsernameChange}
+                onProxyChange={onProxyChange}
               />
             ) : (
               <ModelSettingsTab onClose={onClose} />

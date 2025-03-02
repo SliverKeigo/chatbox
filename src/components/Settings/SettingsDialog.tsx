@@ -1,8 +1,8 @@
 import { GeneralSettingsTab } from './GeneralSettingsTab';
 import { ModelSettingsTab } from './ModelSettingsTab';
-import { ApiSettingsTab } from './ApiSettingsTab';
 import { useState } from 'react';
 import { ProxyConfig } from '../../services/store/proxy';
+import { ModelConfig } from '../../services/store/model';
 
 export interface SettingsDialogProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ export interface SettingsDialogProps {
   onAvatarChange: (avatar: string) => void;
   onUsernameChange: (username: string) => void;
   onProxyChange: (config: ProxyConfig) => void;
+  onModelConfigChange: (config: ModelConfig) => void;
 }
 
 export function SettingsDialog({ 
@@ -19,7 +20,8 @@ export function SettingsDialog({
   onThemeChange, 
   onAvatarChange, 
   onUsernameChange,
-  onProxyChange
+  onProxyChange,
+  onModelConfigChange
 }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'model'>('general');
   
@@ -28,7 +30,7 @@ export function SettingsDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="d-modal d-modal-open w-full">
-        <div className="d-modal-box relative w-full max-w-2xl h-[600px] flex flex-col rounded-2xl mx-auto">
+        <div className="d-modal-box relative w-full max-w-4xl h-[80vh] max-h-[800px] flex flex-col rounded-2xl mx-auto">
           <span 
             className="d-btn d-btn-sm d-btn-circle absolute right-2 top-2"
             onClick={onClose}
@@ -70,7 +72,10 @@ export function SettingsDialog({
                 onProxyChange={onProxyChange}
               />
             ) : (
-              <ModelSettingsTab onClose={onClose} />
+              <ModelSettingsTab 
+                onModelConfigChange={onModelConfigChange}
+                onClose={onClose}
+              />
             )}
           </div>
         </div>

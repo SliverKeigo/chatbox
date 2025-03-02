@@ -3,11 +3,16 @@ import { Chat, Message as MessageType } from './types/chat';
 import { ChatList } from './components/Sidebar/ChatList';
 import { Message } from './components/Chat/Message';
 import { ChatInput } from './components/Chat/ChatInput';
+import { ModelSelector } from './components/Chat/ModelSelector';
 import { SettingsDialog } from './components/Settings/SettingsDialog';
-import { chatService } from './services/api';
+import { ApiService, ChatMessage } from './services/api';
+import type { ApiProviderType } from './services/api/index';
 import { chatStorage, themeStorage, userStorage } from './services/store/index';
 import { proxyStorage, ProxyConfig } from './services/store/proxy';
+import { modelStorage, ModelConfig } from './services/store/model';
 
+// 获取API服务实例
+const apiService = ApiService.getInstance();
 
 function App() {
   const [theme, setTheme] = useState<string | null>(null);
@@ -29,6 +34,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<MessageType | null>(null);
   const [proxyConfig, setProxyConfig] = useState<ProxyConfig | null>(null);
+  const [currentModel, setCurrentModel] = useState<string>('');
+  const [modelConfig, setModelConfig] = useState<ModelConfig | null>(null);
   
   const currentChat = chats.find(chat => chat.id === activeChat) || null;
 
@@ -55,7 +62,32 @@ function App() {
         setProxyConfig(savedProxyConfig);
         
         // 设置API服务的代理
-        chatService.setProxyConfig(savedProxyConfig);
+        apiService.setProxyConfig(savedProxyConfig);
+        
+        // 加载模型配置
+        const savedModelConfig = await modelStorage.loadModelConfig();
+        setModelConfig(savedModelConfig);
+        
+        // 加载当前使用的模型
+        const savedCurrentModel = await modelStorage.loadCurrentModel();
+        setCurrentModel(savedCurrentModel);
+        
+        // 设置API服务的模型配置
+        if (savedModelConfig) {
+          // 根据模型配置确定提供商类型
+          const providerType = savedModelConfig.provider as ApiProviderType || 'openai';
+          
+          // 设置活跃的提供商
+          apiService.setActiveProvider(providerType);
+          
+          // 设置模型配置
+          apiService.setModelConfig(providerType, savedModelConfig);
+          
+          // 设置当前模型
+          if (savedCurrentModel) {
+            apiService.setCurrentModel(savedCurrentModel);
+          }
+        }
         
         // 加载聊天列表
         const savedChats = await chatStorage.loadChats();
@@ -204,88 +236,77 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
-    console.log('handleSendMessage', content);
-    
+  // 发送消息并处理响应
+  const sendMessageWithRetry = async (content: string) => {
     if (!activeChat || !content.trim()) return;
     
-    // 生成唯一的消息ID
-    const generateMessageId = () => {
-      return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    };
-    
-    const userMessage: MessageType = {
-      id: generateMessageId(),
-      content,
-      timestamp: new Date().toISOString(),
-      type: 'user'
-    };
-
-    // 添加用户消息
-    setChats(prevChats => prevChats.map(chat => {
-      if (chat.id === activeChat) {
-        return {
-          ...chat,
-          messages: [...chat.messages, userMessage],
-          lastMessage: userMessage,
-          firstMessage: chat.firstMessage || userMessage
-        };
-      }
-      return chat;
-    }));
-
     setIsLoading(true);
-    setErrorMessage(null); // 清除之前的错误消息
-    
-    // 创建一个初始的空助手消息用于流式更新
-    const assistantMessageId = generateMessageId();
-    const initialAssistantMessage: MessageType = {
-      id: assistantMessageId,
-      content: '',
-      timestamp: new Date().toISOString(),
-      type: 'assistant'
-    };
-    
-    // 不立即设置streamingMessage，而是等待第一个数据块到达
-    
-    // 添加超时处理
-    let responseTimeout: NodeJS.Timeout | null = setTimeout(() => {
-      if (!streamingMessage || !streamingMessage.content.trim()) {
-        console.warn('响应超时 - 未收到有效数据');
-        setErrorMessage('响应超时，未收到数据');
-        setIsLoading(false);
-      }
-    }, 20000); // 20秒超时
+    setErrorMessage(null);
     
     try {
-      // 获取当前对话的上下文
-      const context = currentChat?.messages.map(msg => ({
-        role: msg.type,
-        content: msg.content
-      })) || [];
+      // 创建用户消息
+      const userMessageId = `user-${Date.now()}`;
+      const userMessage: MessageType = {
+        id: userMessageId,
+        content,
+        timestamp: new Date().toISOString(),
+        type: 'user'
+      };
       
-      let messageAdded = false; // 跟踪消息是否已添加到UI
+      // 更新聊天记录，添加用户消息
+      setChats(prevChats => prevChats.map(chat => {
+        if (chat.id === activeChat) {
+          return {
+            ...chat,
+            messages: [...chat.messages, userMessage],
+            lastMessage: userMessage
+          };
+        }
+        return chat;
+      }));
+      
+      // 准备上下文消息
+      const currentChatData = chats.find(chat => chat.id === activeChat);
+      if (!currentChatData) {
+        throw new Error('找不到当前聊天');
+      }
+      
+      // 转换消息格式为API所需格式
+      const context: ChatMessage[] = currentChatData.messages.map(msg => ({
+        role: msg.type as 'user' | 'assistant',
+        content: msg.content
+      }));
+      
+      // 创建助手消息ID
+      const assistantMessageId = `assistant-${Date.now()}`;
+      
+      // 标记是否已添加消息气泡
+      let messageAdded = false;
       
       // 直接使用API服务发送消息，API服务内部已经实现了重试逻辑
-      const fullResponse = await chatService.streamMessage(
+      const fullResponse = await apiService.streamMessage(
         content, 
         context,
-        (chunk) => {
+        (chunk: string) => {
           if (chunk && chunk.trim()) {
             // 第一个有效数据块到达时创建消息气泡
             if (!messageAdded) {
               messageAdded = true; // 标记消息已添加
               console.log('创建初始消息气泡');
               
-              // 检查是否已经存在相同ID的消息
-              const messageExists = currentChat?.messages.some(msg => msg.id === initialAssistantMessage.id) || false;
+              // 创建初始的助手消息用于流式更新
+              const initialAssistantMessage: MessageType = {
+                id: assistantMessageId,
+                content: chunk,
+                timestamp: new Date().toISOString(),
+                type: 'assistant'
+              };
               
-              if (!messageExists) {
-                setStreamingMessage({
-                  ...initialAssistantMessage,
-                  content: chunk
-                });
-              }
+              // 设置流式消息状态
+              setStreamingMessage({
+                ...initialAssistantMessage,
+                content: chunk
+              });
             } else {
               // 更新流式消息内容
               setStreamingMessage(prev => {
@@ -301,12 +322,6 @@ function App() {
           }
         }
       );
-      
-      // 清除超时
-      if (responseTimeout) {
-        clearTimeout(responseTimeout);
-        responseTimeout = null;
-      }
       
       // 流式响应完成后，更新最终消息
       if (fullResponse && fullResponse.trim()) {
@@ -342,42 +357,33 @@ function App() {
           }
           return chat;
         }));
+        
+        // 清除流式消息状态
+        setStreamingMessage(null);
       } else {
-        // 如果响应为空，显示错误
-        setErrorMessage('收到了空响应，请重试');
+        // 如果没有收到有效响应，显示错误
+        throw new Error('未收到任何响应数据，请重试');
       }
     } catch (error: any) {
-      console.error('Failed to get response:', error);
+      console.error('发送消息失败:', error);
       
-      // 清除超时
-      if (responseTimeout) {
-        clearTimeout(responseTimeout);
-        responseTimeout = null;
+      // 设置用户友好的错误消息
+      let userFriendlyError = '发送消息失败，请重试';
+      
+      if (error.message.includes('API key')) {
+        userFriendlyError = 'API密钥无效，请在设置中更新您的API密钥';
+      } else if (error.message.includes('timeout') || error.message.includes('超时')) {
+        userFriendlyError = '请求超时，请检查您的网络连接';
+      } else if (error.message.includes('network') || error.message.includes('Failed to fetch')) {
+        userFriendlyError = '网络请求失败，请检查您的网络连接';
+      } else if (error.message.includes('未收到任何响应数据')) {
+        userFriendlyError = '未收到任何响应数据，请重试';
       }
       
-      // 提供更友好的错误消息
-      let friendlyError = error instanceof Error ? error.message : '发送消息失败';
-      
-      if (friendlyError.includes('解析响应数据失败') || friendlyError.includes('空响应')) {
-        friendlyError = '服务器返回了无效数据，请稍后重试';
-      } else if (friendlyError.includes('超时')) {
-        friendlyError = '请求超时，请检查网络连接后重试';
-      } else if (friendlyError.includes('API密钥')) {
-        friendlyError = 'API密钥无效或已过期，请更新API配置';
-      } else if (friendlyError.includes('Windows环境连接API失败')) {
-        friendlyError = 'Windows环境连接API失败，请检查网络设置、代理或防火墙配置';
-      } else if (friendlyError.includes('Failed to fetch')) {
-        friendlyError = '网络请求失败，请检查网络连接或代理设置';
-      } else if (friendlyError.includes('网络请求失败')) {
-        friendlyError = '网络连接异常，请检查网络状态后重试';
-      }
-      
-      setErrorMessage(friendlyError);
+      setErrorMessage(userFriendlyError);
     } finally {
       setIsLoading(false);
-      
-      // 确保在完成后清除streamingMessage
-      setStreamingMessage(null);
+      setRetryCount(0); // 重置重试计数
     }
   };
 
@@ -399,7 +405,38 @@ function App() {
   // 更新代理设置
   const handleProxyChange = (newProxyConfig: ProxyConfig) => {
     setProxyConfig(newProxyConfig);
-    chatService.setProxyConfig(newProxyConfig);
+    apiService.setProxyConfig(newProxyConfig);
+  };
+
+  // 处理模型变更
+  const handleModelChange = (model: string) => {
+    setCurrentModel(model);
+    
+    // 获取当前活跃的提供商
+    const activeProvider = apiService.getActiveProvider();
+    
+    // 设置当前模型
+    apiService.setCurrentModel(model);
+    
+    console.log(`模型已切换到: ${model} (提供商: ${activeProvider})`);
+  };
+
+  // 处理模型配置变更
+  const handleModelConfigChange = async (config: ModelConfig) => {
+    console.log('更新模型配置:', config);
+    setModelConfig(config);
+    
+    // 根据模型配置确定提供商类型
+    const providerType = config.provider as ApiProviderType || 'openai';
+    
+    // 设置活跃的提供商
+    apiService.setActiveProvider(providerType);
+    
+    // 设置模型配置
+    apiService.setModelConfig(providerType, config);
+    
+    // 保存模型配置
+    await modelStorage.saveModelConfig(config);
   };
 
   useEffect(() => {
@@ -514,6 +551,11 @@ function App() {
             )}
           </div>
           <div className="flex items-center gap-2 md:gap-4">
+            <ModelSelector 
+              currentModel={currentModel}
+              onModelChange={handleModelChange} 
+            />
+            
             <button
               className="d-btn d-btn-sm d-btn-ghost d-btn-circle"
               onClick={() => setIsSettingsOpen(true)}
@@ -544,7 +586,6 @@ function App() {
             <Message key={message.id} message={message} />
           ))}
           {streamingMessage && streamingMessage.content.trim() && 
-           // 确保不显示已经在currentChat.messages中的消息
            !currentChat?.messages.some(msg => msg.id === streamingMessage.id) && (
             <Message key={streamingMessage.id} message={streamingMessage} />
           )}
@@ -558,7 +599,7 @@ function App() {
         
         <div className="p-2 md:p-3 d-navbar">
           <ChatInput
-            onSendMessage={handleSendMessage}
+            onSendMessage={sendMessageWithRetry}
             disabled={isLoading}
           />
         </div>
@@ -571,6 +612,7 @@ function App() {
         onAvatarChange={handleAvatarChange}
         onUsernameChange={handleUsernameChange}
         onProxyChange={handleProxyChange}
+        onModelConfigChange={handleModelConfigChange}
       />
     </div>
   );
